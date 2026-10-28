@@ -50,3 +50,11 @@ Registro de decisiones tomadas donde el SPEC era ambiguo o dejaba opciones abier
 35. **Webhook con firma inválida** responde 401 (y queda registrado en `WompiEvent`); con firma válida siempre responde 200 aunque la referencia sea desconocida o el monto no coincida (para que Wompi no reintente indefinidamente), registrando el resultado.
 36. **Volver "atrás" desde Wompi** no reenvía automáticamente al checkout (se detecta la navegación `back_forward`).
 37. **`wompi_sync`** se programa como Cron en Railway (cada 15–30 min) o se ejecuta manualmente; revisa pagos pendientes entre 15 minutos y 7 días de antigüedad.
+
+## Fase 5 · Pedidos y seguimiento
+
+38. **Máquina de estados** en `orders/services.py` (`TRANSICIONES` + `validar_transicion` + `cambiar_estado`): es la única puerta para cambiar `estado_pedido`. El formulario del panel (`CambioEstadoForm`) reutiliza `validar_transicion` para mostrar los errores por campo, y el servicio vuelve a validar (defensa en profundidad).
+39. **`esperando_cotizacion → pendiente_pago`** solo es posible registrando la cotización (`registrar_cotizacion`), que fija el envío, recalcula el total, deja un evento en la línea de tiempo y envía el email con el enlace para pagar.
+40. **Evidencias privadas**: se guardan en `MEDIA_ROOT/privado/evidencias/<pedido>/<uuid>.webp` con un `FileSystemStorage` sin URL pública. Solo se sirven por `/pedidos/evidencia/<id>/` al dueño del pedido o al staff, con `Cache-Control: private`. La vista pública de `/media/` solo sirve las carpetas de productos, categorías, marcas, banners y tienda.
+41. **Email "pedido enviado"** adjunta la foto de evidencia y además se puede ver en la línea de tiempo (lightbox).
+42. **Cancelar** devuelve el stock solo si ya se había descontado (indicador `stock_devuelto`, idempotente).
