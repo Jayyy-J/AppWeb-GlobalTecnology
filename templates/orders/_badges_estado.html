@@ -1,0 +1,2 @@
+<span class="badge {% if pedido.estado_pedido == 'entregado' %}exito{% elif pedido.estado_pedido == 'cancelado' %}error{% elif pedido.estado_pedido == 'esperando_cotizacion' or pedido.estado_pedido == 'pendiente_pago' %}alerta{% else %}suave{% endif %}">{{ pedido.get_estado_pedido_display }}</span>
+<span class="badge {% if pedido.estado_pago == 'aprobado' %}exito{% elif pedido.estado_pago == 'pendiente' %}suave{% else %}error{% endif %}">Pago: {{ pedido.get_estado_pago_display|lower }}</span>

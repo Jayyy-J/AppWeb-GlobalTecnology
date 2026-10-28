@@ -1,0 +1,69 @@
+{% if res.vacio %}
+<div class="vidrio tarjeta vacio">
+  <div class="ico">{% icono "carrito" 64 %}</div>
+  <h2>Tu carrito está vacío</h2>
+  <p class="muted">Explora nuestras ofertas y encuentra la tecnología que buscas.</p>
+  <a class="btn" href="{% url 'catalog:ofertas' %}">Ver ofertas</a>
+</div>
+{% else %}
+<div class="dos-col">
+  <section class="vidrio tarjeta" aria-label="Productos en el carrito">
+    {% if res.problemas %}<div class="aviso alerta" role="alert">Algunos productos cambiaron de disponibilidad. Ajusta las cantidades para continuar.</div>{% endif %}
+    {% for l in res.lineas %}{% with img=l.producto.imagen_principal %}
+    <article class="item-carrito">
+      <a href="{{ l.producto.get_absolute_url }}">{% if img %}<img src="{{ img.url_thumb }}" alt="{{ img.alt }}" width="100" height="100" loading="lazy">{% endif %}</a>
+      <div>
+        <a href="{{ l.producto.get_absolute_url }}" style="color:var(--texto);font-weight:600">{{ l.producto.nombre }}</a>
+        <div class="small muted">{% if l.producto.marca %}{{ l.producto.marca.nombre }} · {% endif %}SKU {{ l.producto.sku }}</div>
+        {% if l.problema %}<div class="agotado-txt small" role="alert">{{ l.problema }}</div>
+        {% elif l.producto.stock_bajo %}<div class="stock-bajo small">¡Quedan {{ l.producto.stock }}!</div>
+        {% else %}<div class="small" style="color:var(--ahorro)">Disponible</div>{% endif %}
+        {% if l.cambio_precio %}<div class="small muted">El precio cambió desde que lo agregaste ({{ l.item.precio_al_agregar|cop }}).</div>{% endif %}
+        <div class="row" style="margin-top:8px">
+          <form class="cantidad" hx-post="{% url 'cart:actualizar' l.item.pk %}" hx-target="#carrito-contenido" hx-swap="innerHTML" method="post" action="{% url 'cart:actualizar' l.item.pk %}">
+            {% csrf_token %}
+            <button type="submit" name="accion" value="menos" aria-label="Disminuir cantidad de {{ l.producto.nombre }}">−</button>
+            <input type="number" name="cantidad" value="{{ l.cantidad }}" min="1" max="{{ l.producto.stock|default:1 }}" aria-label="Cantidad de {{ l.producto.nombre }}"
+                   hx-post="{% url 'cart:actualizar' l.item.pk %}" hx-trigger="change delay:400ms" hx-target="#carrito-contenido" hx-include="closest form">
+            <button type="submit" name="accion" value="mas" aria-label="Aumentar cantidad de {{ l.producto.nombre }}" {% if l.cantidad >= l.producto.stock %}disabled{% endif %}>+</button>
+          </form>
+          <form method="post" action="{% url 'cart:eliminar' l.item.pk %}" hx-post="{% url 'cart:eliminar' l.item.pk %}" hx-target="#carrito-contenido">
+            {% csrf_token %}<button class="btn-link peligro small" type="submit">Eliminar</button>
+          </form>
+        </div>
+      </div>
+      <div class="num">
+        <div class="precio-final">{{ l.subtotal|cop }}</div>
+        {% if l.cantidad > 1 %}<div class="small muted">{{ l.precio_unitario|cop }} c/u</div>{% endif %}
+        {% if l.ahorro %}<div class="ahorro-txt">Ahorras {{ l.ahorro|cop }}</div>{% endif %}
+      </div>
+    </article>
+    {% endwith %}{% endfor %}
+  </section>
+
+  <aside class="vidrio fuerte tarjeta resumen" aria-label="Resumen">
+    <h2>Resumen</h2>
+    <dl>
+      <dt>Productos ({{ res.cantidad }})</dt><dd>{{ res.subtotal|cop }}</dd>
+      {% if res.ahorro %}<dt>Ahorro total</dt><dd class="ahorro-txt">−{{ res.ahorro|cop }}</dd>{% endif %}
+      <dt>Envío estimado</dt>
+      <dd>{% if res.envio %}{% if res.envio.valor is not None %}{% if res.envio.valor == 0 %}Gratis{% else %}{{ res.envio.valor|cop }}{% endif %}{% else %}Por cotizar{% endif %}{% else %}—{% endif %}</dd>
+    </dl>
+    {% if res.envio %}
+      <div class="regla-envio {% if res.envio.requiere_cotizacion %}cotizacion{% elif not res.envio.disponible %}sin{% endif %}">
+        {{ res.envio.regla }}{% if res.envio.dias %} · {{ res.envio.dias }} días hábiles{% endif %}
+        {% if direccion %}<div class="small">A tu dirección "{{ direccion.alias }}" ({{ direccion.municipio.nombre }}).</div>{% endif %}
+      </div>
+    {% else %}
+      <p class="small muted">Agrega una dirección predeterminada para estimar el envío. Lo calculamos en el siguiente paso.</p>
+    {% endif %}
+    <dl><dt class="total">Total estimado</dt><dd class="total">{{ res.total|cop }}</dd></dl>
+    {% if res.problemas %}
+      <button class="btn bloque" disabled>Continuar al pago</button>
+    {% else %}
+      <a class="btn bloque" href="{% url 'orders:checkout' %}">Continuar al pago</a>
+    {% endif %}
+    <p class="small muted center" style="margin-top:10px">{% icono "escudo" 16 %} Pago seguro con Wompi</p>
+  </aside>
+</div>
+{% endif %}

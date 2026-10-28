@@ -28,3 +28,13 @@ Registro de decisiones tomadas donde el SPEC era ambiguo o dejaba opciones abier
 19. **Facetas de especificaciones**: se calculan en Python sobre los resultados (máx. 2.000 filas) con semántica "OR dentro de una clave, AND entre claves"; solo se muestran claves con al menos 2 valores. Los conteos de marca/categoría usan una subconsulta de ids para no arrastrar anotaciones al `GROUP BY`.
 20. **Caché del home**: el fragmento completo se cachea 10 min con una versión que se incrementa al guardar productos, categorías, marcas, banners o la configuración de la tienda. Las tarjetas en caché no incluyen `csrf_token` (sería el de otro usuario); el botón "Agregar" usa HTMX, que envía el token desde la cookie.
 21. **Paginación "Cargar más"**: 24 productos por página; el botón trae la página siguiente y se reemplaza a sí mismo por las tarjetas nuevas y un nuevo botón, conservando los filtros.
+
+## Fase 3 · Carrito y checkout
+
+22. **"Agregar al carrito" de un visitante**: la intención (producto, cantidad, página de origen y si era "Comprar ahora") se firma con `django.core.signing` y viaja en el `?next=` del login/registro. Tras autenticarse, `/carrito/agregar-pendiente/<token>/` la completa y vuelve a la página original. El token expira en 2 horas y no se puede manipular.
+23. **Stock en el carrito**: la cantidad se limita al stock disponible al agregar/actualizar. Si el stock o el estado cambian, el carrito muestra el problema y bloquea "Continuar al pago".
+24. **Creación del pedido**: se bloquean las filas de producto (`select_for_update`), se revalidan stock y precio, y se recalcula el envío con el subtotal definitivo. El stock **no** se descuenta al crear el pedido; solo cuando Wompi aprueba el pago. El carrito se conserva hasta la aprobación.
+25. **Nueva dirección en el checkout**: se valida junto con el formulario y solo se guarda si todo es válido; queda disponible en "Mis direcciones".
+26. **Número de pedido** `GT-AAAA-NNNNNN`, derivado del id (único y legible).
+27. **El checkout completa el perfil** (teléfono, tipo y número de documento) si estaban vacíos, porque Wompi los usa para PSE.
+28. **htmx `attributesToSettle`** se limita a `width/height`: el valor por defecto restauraba `style`/`class` después de que Alpine los aplicaba (mostraba el desplegable de sugerencias vacío tras navegar con hx-boost).

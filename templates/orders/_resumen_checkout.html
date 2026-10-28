@@ -1,0 +1,22 @@
+<ul style="list-style:none;padding:0;margin:0 0 12px">
+  {% for l in res.lineas %}
+  <li class="row between small" style="padding:4px 0"><span>{{ l.cantidad }} × {{ l.producto.nombre|truncatechars:40 }}</span><strong>{{ l.subtotal|cop }}</strong></li>
+  {% endfor %}
+</ul>
+<dl>
+  <dt>Subtotal</dt><dd>{{ res.subtotal|cop }}</dd>
+  {% if res.ahorro %}<dt>Ahorro</dt><dd class="ahorro-txt">−{{ res.ahorro|cop }}</dd>{% endif %}
+  <dt>Envío</dt>
+  <dd>{% if res.envio %}{% if res.envio.valor is None %}Por cotizar{% elif res.envio.valor == 0 %}Gratis{% else %}{{ res.envio.valor|cop }}{% endif %}{% else %}—{% endif %}</dd>
+</dl>
+{% if res.envio %}
+<div class="regla-envio {% if res.envio.requiere_cotizacion %}cotizacion{% elif not res.envio.disponible %}sin{% endif %}" role="status">
+  {{ res.envio.regla }}{% if res.envio.dias %} · Entrega estimada: {{ res.envio.dias }} días hábiles{% endif %}
+</div>
+{% else %}
+<div class="regla-envio" role="status">Selecciona una dirección para calcular el envío.</div>
+{% endif %}
+<dl><dt class="total">Total</dt><dd class="total">{{ res.total|cop }}{% if res.envio.requiere_cotizacion %} + envío{% endif %}</dd></dl>
+<div x-data x-init="
+  const b = document.getElementById('btn-pagar'), t = document.getElementById('texto-pagar');
+  if (b) { b.disabled = {{ res.envio.disponible|yesno:'false,true,true' }}; t.textContent = '{% if res.envio.requiere_cotizacion %}Confirmar pedido y solicitar cotización{% else %}Pagar con Wompi{% endif %}'; }"></div>
