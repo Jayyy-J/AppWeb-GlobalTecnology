@@ -1,0 +1,13 @@
+{% extends "panel/base.html" %}
+{% block titulo %}Marcas{% endblock %}
+{% block contenido %}
+<div class="panel-cab"><h1>Marcas</h1><a class="btn" href="{% url 'panel:marca_nueva' %}">{% icono "mas" 18 %} Nueva marca</a></div>
+<div class="vidrio tarjeta" style="padding:8px"><div class="tabla-wrap"><table class="tabla">
+  <thead><tr><th></th><th>Marca</th><th class="num">Productos</th><th>Estado</th><th></th></tr></thead>
+  <tbody>{% for m in marcas %}
+  <tr><td>{% if m.logo %}<img class="miniatura" src="{{ m.logo.url }}" alt="">{% endif %}</td><td><strong>{{ m.nombre }}</strong> <span class="small muted">/{{ m.slug }}</span></td>
+    <td class="num">{{ m.n }}</td><td>{% if m.activa %}<span class="badge exito">Activa</span>{% else %}<span class="badge suave">Inactiva</span>{% endif %}</td>
+    <td class="acciones-fila"><a class="btn chico borde" href="{% url 'panel:marca_editar' m.pk %}">Editar</a> <a class="btn chico borde" href="{% url 'panel:marca_eliminar' m.pk %}" aria-label="Eliminar {{ m.nombre }}">{% icono "basura" 16 %}</a></td></tr>
+  {% empty %}<tr><td colspan="5" class="muted center">Sin marcas.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

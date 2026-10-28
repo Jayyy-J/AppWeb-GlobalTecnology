@@ -1,0 +1,39 @@
+{% extends "panel/base.html" %}
+{% block titulo %}Envíos{% endblock %}
+{% block contenido %}
+<div class="panel-cab"><h1>Envíos</h1></div>
+<div class="grid-panel tres">
+  <section class="vidrio tarjeta">
+    <div class="row between"><h2>Tarifas por zona</h2><a class="btn chico" href="{% url 'panel:tarifa_nueva' %}">{% icono "mas" 16 %} Nueva tarifa</a></div>
+    <p class="small muted">La tarifa de un municipio tiene prioridad sobre la de su departamento.</p>
+    <div class="tabla-wrap"><table class="tabla">
+      <thead><tr><th>Departamento</th><th>Municipio</th><th class="num">Valor</th><th>Días</th><th>Estado</th><th></th></tr></thead>
+      <tbody>{% for t in tarifas %}
+        <tr><td>{{ t.departamento.nombre }}</td><td>{% if t.municipio %}{{ t.municipio.nombre }}{% else %}<span class="muted">Todo el departamento</span>{% endif %}</td>
+          <td class="num">{{ t.valor|cop }}</td><td>{{ t.dias_estimados }}</td>
+          <td>{% if t.activo %}<span class="badge exito">Activa</span>{% else %}<span class="badge suave">Inactiva</span>{% endif %}</td>
+          <td class="acciones-fila"><a class="btn chico borde" href="{% url 'panel:tarifa_editar' t.pk %}">Editar</a> <a class="btn chico borde" href="{% url 'panel:tarifa_eliminar' t.pk %}" aria-label="Eliminar tarifa">{% icono "basura" 16 %}</a></td></tr>
+      {% empty %}<tr><td colspan="6" class="muted center">Sin tarifas por zona.</td></tr>{% endfor %}</tbody>
+    </table></div>
+    <h3 style="margin-top:20px">Importar desde CSV</h3>
+    <form method="post" action="{% url 'panel:tarifas_importar' %}" enctype="multipart/form-data" class="row">
+      {% csrf_token %}
+      <input class="input grow" type="file" name="archivo" accept=".csv,text/csv" required aria-label="Archivo CSV">
+      <button class="btn chico" type="submit">Importar</button>
+    </form>
+    <p class="small muted">Columnas (con encabezado, separador <code>;</code> o <code>,</code>): <code>departamento;municipio;valor;dias;activo</code>. Se aceptan códigos DANE o nombres. Ejemplo:<br><code>Meta;Villavicencio;8000;1-2;si</code> · <code>50;;12000;2-3;si</code>. Las tarifas existentes se actualizan.</p>
+  </section>
+  <section class="vidrio tarjeta">
+    <h2>Reglas de cálculo</h2>
+    <ol class="small muted" style="padding-left:18px">
+      <li>Envío gratis si el subtotal supera el mínimo.</li><li>Tarifa del municipio.</li><li>Tarifa del departamento.</li>
+      <li>Tarifa fija.</li><li>Cotización manual.</li><li>Si ninguna aplica, no se permite comprar a ese destino.</li>
+    </ol>
+    <form method="post" novalidate>{% csrf_token %}
+      {% include "partials/form_errores.html" %}
+      {% for campo in form %}{% include "partials/campo.html" %}{% endfor %}
+      <button class="btn" type="submit">Guardar configuración</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

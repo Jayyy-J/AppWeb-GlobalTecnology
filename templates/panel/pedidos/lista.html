@@ -1,0 +1,14 @@
+{% extends "panel/base.html" %}
+{% block titulo %}Pedidos{% endblock %}
+{% block contenido %}
+<div class="panel-cab"><h1>Pedidos</h1></div>
+<form class="filtros-panel vidrio tarjeta" style="padding:12px" method="get" hx-get="{% url 'panel:pedidos' %}" hx-target="#tabla-pedidos" hx-trigger="change, keyup changed delay:350ms from:#q-ped, submit" hx-push-url="true">
+  <div class="campo grow"><label class="sr-only" for="q-ped">Buscar</label><input id="q-ped" class="input" style="width:100%" type="search" name="q" value="{{ request.GET.q }}" placeholder="Número, cliente, email, documento o referencia"></div>
+  <select class="input" name="estado_pedido" aria-label="Estado del pedido"><option value="">Estado del pedido</option>{% for v, l in estados_pedido %}<option value="{{ v }}" {% if request.GET.estado_pedido == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  <select class="input" name="estado_pago" aria-label="Estado del pago"><option value="">Estado del pago</option>{% for v, l in estados_pago %}<option value="{{ v }}" {% if request.GET.estado_pago == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select>
+  <label class="small">Desde <input class="input" type="date" name="desde" value="{{ request.GET.desde }}"></label>
+  <label class="small">Hasta <input class="input" type="date" name="hasta" value="{{ request.GET.hasta }}"></label>
+  <label class="check-linea small" style="margin:0"><input type="checkbox" name="alerta" value="1" {% if request.GET.alerta %}checked{% endif %}> Con alerta</label>
+</form>
+<div id="tabla-pedidos">{% include "panel/pedidos/_tabla.html" %}</div>
+{% endblock %}

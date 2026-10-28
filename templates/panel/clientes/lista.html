@@ -1,0 +1,19 @@
+{% extends "panel/base.html" %}
+{% block titulo %}Clientes{% endblock %}
+{% block contenido %}
+<div class="panel-cab"><h1>Clientes</h1></div>
+<form class="filtros-panel vidrio tarjeta" style="padding:12px" method="get">
+  <div class="campo grow"><label class="sr-only" for="q-cli">Buscar</label><input id="q-cli" class="input" style="width:100%" type="search" name="q" value="{{ request.GET.q }}" placeholder="Nombre, email, documento o teléfono"></div>
+  <select class="input" name="tipo" aria-label="Tipo" onchange="this.form.requestSubmit()"><option value="">Todos</option><option value="staff" {% if request.GET.tipo == "staff" %}selected{% endif %}>Staff</option><option value="inactivos" {% if request.GET.tipo == "inactivos" %}selected{% endif %}>Inactivos</option></select>
+  <button class="btn chico" type="submit">Buscar</button>
+</form>
+<div class="vidrio tarjeta" style="padding:8px"><div class="tabla-wrap"><table class="tabla">
+  <thead><tr><th>Cliente</th><th>Teléfono</th><th>Registro</th><th class="num">Pedidos</th><th class="num">Total comprado</th><th>Estado</th></tr></thead>
+  <tbody>{% for u in pagina %}
+    <tr><td><a href="{% url 'panel:cliente' u.pk %}"><strong>{{ u.get_full_name|default:u.email }}</strong></a><div class="small muted">{{ u.email }}</div></td>
+      <td>{{ u.telefono }}</td><td class="small">{{ u.date_joined|date:"d/m/Y" }}</td><td class="num">{{ u.n_pedidos }}</td><td class="num">{{ u.total_comprado|default:0|cop }}</td>
+      <td>{% if not u.is_active %}<span class="badge error">Inactivo</span>{% elif u.is_superuser %}<span class="badge">Superusuario</span>{% elif u.is_staff %}<span class="badge suave">Staff</span>{% else %}<span class="badge exito">Activo</span>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="6" class="center muted">Sin resultados.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% include "panel/_paginacion.html" %}
+{% endblock %}

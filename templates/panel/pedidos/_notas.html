@@ -1,0 +1,7 @@
+<form id="form-notas" method="post" action="{% url 'panel:pedido_notas' pedido.numero %}" hx-post="{% url 'panel:pedido_notas' pedido.numero %}" hx-target="#form-notas" hx-swap="outerHTML">
+  {% csrf_token %}
+  <label for="notas-internas">Notas internas <span class="muted small">(no visibles al cliente)</span></label>
+  <textarea id="notas-internas" class="input" name="notas_internas" rows="4">{{ pedido.notas_internas }}</textarea>
+  {% if pedido.alerta_stock %}<label class="check-linea small" style="margin-top:8px"><input type="checkbox" name="resolver_alerta" value="1"> Marcar la alerta como resuelta</label>{% endif %}
+  <div class="row" style="margin-top:8px"><button class="btn chico" type="submit">Guardar notas</button>{% if guardado %}<span class="small" style="color:var(--ahorro)" role="status">✓ Guardado</span>{% endif %}</div>
+</form>

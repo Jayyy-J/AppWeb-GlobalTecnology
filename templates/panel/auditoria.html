@@ -1,0 +1,19 @@
+{% extends "panel/base.html" %}
+{% block titulo %}Auditoría{% endblock %}
+{% block contenido %}
+<div class="panel-cab"><h1>Auditoría</h1></div>
+<form class="filtros-panel vidrio tarjeta" style="padding:12px" method="get">
+  <div class="campo grow"><input class="input" style="width:100%" type="search" name="q" value="{{ request.GET.q }}" placeholder="Buscar por objeto, usuario o acción" aria-label="Buscar"></div>
+  <select class="input" name="modelo" aria-label="Tipo" onchange="this.form.requestSubmit()"><option value="">Todo</option>{% for m in modelos %}<option value="{{ m }}" {% if request.GET.modelo == m %}selected{% endif %}>{{ m|capfirst }}</option>{% endfor %}</select>
+  <button class="btn chico" type="submit">Filtrar</button>
+</form>
+<div class="vidrio tarjeta" style="padding:8px"><div class="tabla-wrap"><table class="tabla">
+  <thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Objeto</th><th>Cambios</th></tr></thead>
+  <tbody>{% for a in pagina %}
+  <tr><td class="small" style="white-space:nowrap">{{ a.fecha|date:"d/m/Y H:i" }}</td><td class="small">{{ a.usuario.email|default:"sistema" }}</td>
+    <td><span class="badge suave">{{ a.accion }}</span></td><td class="small">{{ a.modelo|capfirst }}: {{ a.objeto_repr }}</td>
+    <td class="small">{% for k, texto in a.cambios_lista %}<div><strong>{{ k }}</strong>: {{ texto }}</div>{% endfor %}</td></tr>
+  {% empty %}<tr><td colspan="5" class="muted center">Sin registros.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% include "panel/_paginacion.html" %}
+{% endblock %}

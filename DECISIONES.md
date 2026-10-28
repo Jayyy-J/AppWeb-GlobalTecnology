@@ -58,3 +58,13 @@ Registro de decisiones tomadas donde el SPEC era ambiguo o dejaba opciones abier
 40. **Evidencias privadas**: se guardan en `MEDIA_ROOT/privado/evidencias/<pedido>/<uuid>.webp` con un `FileSystemStorage` sin URL pública. Solo se sirven por `/pedidos/evidencia/<id>/` al dueño del pedido o al staff, con `Cache-Control: private`. La vista pública de `/media/` solo sirve las carpetas de productos, categorías, marcas, banners y tienda.
 41. **Email "pedido enviado"** adjunta la foto de evidencia y además se puede ver en la línea de tiempo (lightbox).
 42. **Cancelar** devuelve el stock solo si ya se había descontado (indicador `stock_devuelto`, idempotente).
+
+## Fase 6 · Panel de administración
+
+43. **Permisos**: decorador `staff_required` en cada vista del panel (anónimo → login; cliente → 403). Dar o quitar acceso de staff requiere superusuario (`superuser_required`). Una prueba recorre automáticamente todas las rutas del panel para garantizarlo.
+44. **Auditoría** (`AuditLog`): registra usuario, acción, objeto, IP y los cambios campo a campo (antes → después) en productos (incluidos precios y descuentos), acciones masivas, categorías, marcas, pedidos (estado, cotización, notas), envíos, tarifas, clientes, contenido y exportaciones.
+45. **Eliminar producto**: si tiene pedidos se desactiva en lugar de borrarse (los `OrderItem` guardan snapshot y `SET_NULL`). Duplicar crea una copia inactiva con SKU `<SKU>-COPIA` y copia física de las fotos.
+46. **Fotos**: subida múltiple con arrastrar y soltar (en el formulario, se procesan al guardar) y, en edición, galería HTMX con reordenamiento (SortableJS), foto principal, texto alternativo y eliminación.
+47. **Rótulo**: vista imprimible (HTML con estilos de impresión; el navegador permite "Guardar como PDF") en lugar de generar PDF en el servidor, para no agregar dependencias pesadas.
+48. **CSV**: exportaciones con BOM UTF-8 y separador `;` (Excel en español los abre bien). La importación de tarifas acepta `;` o `,`, códigos DANE o nombres (sin importar tildes) y actualiza las tarifas existentes.
+49. **Tienda ↔ panel con hx-boost**: usan `<head>` distintos; el middleware HTMX fuerza una carga completa (`HX-Redirect`) cuando una navegación con boost cruza de una zona a la otra.

@@ -1,0 +1,114 @@
+{% extends "panel/base.html" %}
+{% block titulo %}{% if producto %}Editar {{ producto.nombre }}{% else %}Nuevo producto{% endif %}{% endblock %}
+{% block contenido %}
+<div class="panel-cab">
+  <div>
+    <a class="small" href="{% url 'panel:productos' %}">‹ Productos</a>
+    <h1>{% if producto %}{{ producto.nombre }}{% else %}Nuevo producto{% endif %}</h1>
+  </div>
+  {% if producto %}
+  <div class="row">
+    <a class="btn chico borde" href="{{ producto.get_absolute_url }}" target="_blank" rel="noopener" hx-boost="false">{% icono "ojo" 16 %} Ver en tienda</a>
+    <form method="post" action="{% url 'panel:producto_duplicar' producto.pk %}">{% csrf_token %}<button class="btn chico borde" type="submit">{% icono "copiar" 16 %} Duplicar</button></form>
+    <a class="btn chico peligro" href="{% url 'panel:producto_eliminar' producto.pk %}">{% icono "basura" 16 %} {% if tiene_pedidos %}Desactivar{% else %}Eliminar{% endif %}</a>
+  </div>
+  {% endif %}
+</div>
+
+<form method="post" enctype="multipart/form-data" novalidate
+  x-data="productoForm({ precio: {{ form.precio.value|default:0 }}, tipo: '{{ form.tipo_descuento.value|default:'ninguno' }}', pct: {{ form.descuento_porcentaje.value|default:'null' }}, antes: {{ form.precio_antes.value|default:'null' }}, specs: JSON.parse(JSON.parse(document.getElementById('specs-inicial').textContent)) })">
+  {% csrf_token %}
+  {{ form.especificaciones_json.value|default:"[]"|json_script:"specs-inicial" }}
+  <input type="hidden" name="especificaciones_json" :value="specsJson">
+  {% include "partials/form_errores.html" %}
+  <div class="grid-panel tres">
+    <div class="stack">
+      <section class="vidrio tarjeta">
+        <h2>Información</h2>
+        <div class="grid-form dos">
+          <div class="ancho">{% with campo=form.nombre %}{% include "partials/campo.html" %}{% endwith %}</div>
+          {% with campo=form.sku %}{% include "partials/campo.html" %}{% endwith %}
+          {% with campo=form.marca %}{% include "partials/campo.html" %}{% endwith %}
+          <div class="ancho">{% with campo=form.descripcion_corta %}{% include "partials/campo.html" %}{% endwith %}</div>
+          <div class="ancho">{% with campo=form.descripcion %}{% include "partials/campo.html" %}{% endwith %}</div>
+        </div>
+      </section>
+
+      <section class="vidrio tarjeta">
+        <h2>Fotos</h2>
+        {% if producto %}
+          <p class="small muted">Arrastra las fotos para ordenarlas. La marcada como principal se muestra en listados.</p>
+          <div id="galeria-producto">{% include "panel/productos/_galeria.html" %}</div>
+        {% endif %}
+        <div x-data="dropzone()" class="dropzone" :class="{ encima: encima }" style="margin-top:12px"
+             @dragover.prevent="encima = true" @dragleave.prevent="encima = false" @drop.prevent="soltar($event)" @click="$refs.input.click()">
+          {% icono "subir" 32 %}
+          <p style="margin:6px 0 0"><strong>Arrastra fotos aquí</strong> o haz clic para elegirlas</p>
+          <p class="small muted" style="margin:0">JPG, PNG o WebP · máx. 8 MB c/u · se convierten a WebP en 3 tamaños</p>
+          <input type="file" name="imagenes_nuevas" multiple accept="image/jpeg,image/png,image/webp" x-ref="input" @change="actualizar()" class="sr-only" id="id_imagenes_nuevas" @click.stop>
+          <ul class="small" style="list-style:none;padding:0;margin:8px 0 0" x-show="nombres.length"><template x-for="n in nombres"><li x-text="'• ' + n"></li></template></ul>
+          <p class="small" x-show="nombres.length" style="margin:6px 0 0">Se subirán al guardar.</p>
+        </div>
+        {% for e in form.imagenes_nuevas.errors %}<div class="error">{{ e }}</div>{% endfor %}
+      </section>
+
+      <section class="vidrio tarjeta specs-editor">
+        <h2>Especificaciones</h2>
+        <p class="small muted">Se muestran en la ficha y generan los filtros dinámicos (por ejemplo Color, RAM, Almacenamiento). Usa los mismos nombres de clave en productos similares.</p>
+        <template x-for="(s, i) in specs" :key="i">
+          <div class="fila">
+            <input class="input" type="text" placeholder="Clave (ej. RAM)" x-model="s.k" list="claves-specs" :aria-label="'Clave ' + (i + 1)">
+            <input class="input" type="text" placeholder="Valor (ej. 8 GB)" x-model="s.v" :aria-label="'Valor ' + (i + 1)">
+            <button class="btn icono borde" type="button" @click="quitarSpec(i)" aria-label="Quitar especificación">{% icono "cerrar" 18 %}</button>
+          </div>
+        </template>
+        <datalist id="claves-specs"><option value="Color"><option value="RAM"><option value="Almacenamiento"><option value="Pantalla"><option value="Procesador"><option value="Conectividad"><option value="Batería"><option value="Resolución"></datalist>
+        <button class="btn chico sec" type="button" @click="agregarSpec()">{% icono "mas" 16 %} Agregar especificación</button>
+        {% for e in form.especificaciones_json.errors %}<div class="error">{{ e }}</div>{% endfor %}
+      </section>
+    </div>
+
+    <div class="stack">
+      <section class="vidrio tarjeta">
+        <h2>Precio y descuento</h2>
+        {% with campo=form.precio %}{% include "partials/campo.html" %}{% endwith %}
+        <div class="campo"><label>Tipo de descuento</label>{{ form.tipo_descuento }}</div>
+        <div x-show="tipo === 'porcentaje'" x-cloak>{% with campo=form.descuento_porcentaje %}{% include "partials/campo.html" %}{% endwith %}</div>
+        <div x-show="tipo === 'precio_antes'" x-cloak>{% with campo=form.precio_antes %}{% include "partials/campo.html" %}{% endwith %}</div>
+        <div x-show="tipo !== 'ninguno'" x-cloak class="grid-form dos">
+          {% with campo=form.descuento_inicia %}{% include "partials/campo.html" %}{% endwith %}
+          {% with campo=form.descuento_termina %}{% include "partials/campo.html" %}{% endwith %}
+        </div>
+        <div class="preview-precio" aria-live="polite">
+          <div class="small muted" style="margin-bottom:4px">Así lo verá el cliente:</div>
+          <span class="badge ahorro" x-show="ahorroPct > 0" x-text="'-' + ahorroPct + '%'"></span>
+          <span class="precio-final" style="font-size:1.4rem" x-text="cop(final)"></span>
+          <div x-show="tachado > 0"><span class="precio-antes" x-text="cop(tachado)"></span> <span class="ahorro-txt" x-text="'Ahorras ' + cop(tachado - final)"></span></div>
+          <div class="error" x-show="errorDescuento" x-text="errorDescuento"></div>
+        </div>
+      </section>
+      <section class="vidrio tarjeta">
+        <h2>Inventario y visibilidad</h2>
+        <div class="grid-form dos">
+          {% with campo=form.stock %}{% include "partials/campo.html" %}{% endwith %}
+          {% with campo=form.stock_minimo_alerta %}{% include "partials/campo.html" %}{% endwith %}
+        </div>
+        {% with campo=form.activo %}{% include "partials/campo.html" %}{% endwith %}
+        {% with campo=form.destacado %}{% include "partials/campo.html" %}{% endwith %}
+        {% with campo=form.nuevo %}{% include "partials/campo.html" %}{% endwith %}
+      </section>
+      <section class="vidrio tarjeta">
+        <h2>Categorías</h2>
+        {% with campo=form.categoria_principal %}{% include "partials/campo.html" %}{% endwith %}
+        <label>Pertenece también a</label>
+        <div class="checks-categorias">{{ form.categorias }}</div>
+        <p class="small muted">La categoría principal (y su categoría padre) se agregan automáticamente.</p>
+      </section>
+      <div class="vidrio tarjeta row" style="position:sticky;bottom:12px">
+        <button class="btn grow" type="submit">Guardar</button>
+        <button class="btn sec" type="submit" name="seguir" value="1">Guardar y seguir editando</button>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

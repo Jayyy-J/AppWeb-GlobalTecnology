@@ -1,0 +1,131 @@
+{% extends "panel/base.html" %}
+{% block titulo %}Pedido {{ pedido.numero }}{% endblock %}
+{% block contenido %}
+<div class="panel-cab">
+  <div><a class="small" href="{% url 'panel:pedidos' %}">‹ Pedidos</a><h1>Pedido {{ pedido.numero }}</h1>
+    <div class="small muted">{{ pedido.creado|date:"j \d\e F \d\e Y, g:i a" }}</div></div>
+  <div class="row">{% include "orders/_badges_estado.html" %}<a class="btn chico borde" href="{% url 'panel:pedido_rotulo' pedido.numero %}" target="_blank" hx-boost="false">{% icono "imprimir" 16 %} Rótulo</a></div>
+</div>
+{% if pedido.alerta_stock %}<div class="aviso error" role="alert"><strong>Alerta:</strong> {{ pedido.alerta_detalle|linebreaksbr }}</div>{% endif %}
+
+<div class="grid-panel tres">
+  <div class="stack">
+    {% if pedido.estado_pedido == "esperando_cotizacion" %}
+    <section class="vidrio tarjeta" style="border:2px solid var(--alerta)">
+      <h2>{% icono "documento" 20 %} Cotizar envío</h2>
+      <p class="small">Destino sin tarifa: <strong>{{ pedido.envio_municipio }}, {{ pedido.envio_departamento }}</strong>. Al guardar, el pedido pasa a «Pendiente de pago», se recalcula el total y el cliente recibe un email con el enlace para pagar.</p>
+      <form method="post" action="{% url 'panel:pedido_cotizar' pedido.numero %}" class="grid-form dos" novalidate>
+        {% csrf_token %}
+        {% with form=form_cotizacion %}{% include "partials/form_errores.html" %}
+        {% with campo=form.costo_envio %}{% include "partials/campo.html" %}{% endwith %}
+        <div class="ancho">{% with campo=form.nota %}{% include "partials/campo.html" %}{% endwith %}</div>{% endwith %}
+        <div><button class="btn" type="submit">Enviar cotización al cliente</button></div>
+      </form>
+    </section>
+    {% endif %}
+
+    {% if form_estado.fields.estado.choices %}
+    <section class="vidrio tarjeta" x-data="cambioEstado('{{ form_estado.estado.value|default:'' }}', '{{ form_estado.metodo_entrega.value|default:'' }}', '{{ pedido.metodo_entrega }}')">
+      <h2>Cambiar estado</h2>
+      <form method="post" action="{% url 'panel:pedido_estado' pedido.numero %}" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+        {% with form=form_estado %}{% include "partials/form_errores.html" %}{% endwith %}
+        <div class="campo">
+          <label for="id_estado">Nuevo estado</label>
+          <select id="id_estado" name="estado" class="input" x-model="estado" required>
+            <option value="">Selecciona…</option>
+            {% for v, l in form_estado.fields.estado.choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+          </select>
+          {% for e in form_estado.estado.errors %}<div class="error">{{ e }}</div>{% endfor %}
+        </div>
+        <div x-show="estado === 'en_proceso'" x-cloak class="aviso small">Solo es posible si el pago está aprobado.</div>
+        <div x-show="estado === 'enviado'" x-cloak>
+          <div class="campo"><label>Método de entrega</label>
+            <div id="id_metodo_entrega">
+              <label><input type="radio" name="metodo_entrega" value="transportadora" x-model="metodo"> Transportadora</label>
+              <label><input type="radio" name="metodo_entrega" value="personal" x-model="metodo"> Entrega personal</label>
+            </div>
+            {% for e in form_estado.metodo_entrega.errors %}<div class="error">{{ e }}</div>{% endfor %}
+          </div>
+          <div x-show="metodo === 'transportadora'" class="grid-form dos">
+            {% with campo=form_estado.transportadora %}{% include "partials/campo.html" %}{% endwith %}
+            {% with campo=form_estado.numero_guia %}{% include "partials/campo.html" %}{% endwith %}
+            <div class="ancho">{% with campo=form_estado.url_rastreo %}{% include "partials/campo.html" %}{% endwith %}</div>
+            <datalist id="transportadoras">{% for t in transportadoras %}<option value="{{ t }}">{% endfor %}</datalist>
+          </div>
+          <div x-show="metodo === 'personal'">{% with campo=form_estado.entregado_por %}{% include "partials/campo.html" %}{% endwith %}</div>
+        </div>
+        <div x-show="estado === 'enviado' || estado === 'entregado'" x-cloak class="campo{% if form_estado.foto.errors %} con-error{% endif %}">
+          <label for="id_foto">Foto de evidencia
+            <span class="small" x-show="estado === 'enviado'">(obligatoria: <span x-text="metodo === 'personal' ? 'foto de la entrega o del paquete listo' : 'foto o captura de la guía/flete'"></span>)</span>
+            <span class="small" x-show="estado === 'entregado'" x-text="metodoActual === 'personal' ? '(obligatoria en entregas personales)' : '(opcional)'"></span>
+          </label>
+          <input id="id_foto" class="input" type="file" name="foto" accept="image/*" capture="environment">
+          {% for e in form_estado.foto.errors %}<div class="error">{{ e }}</div>{% endfor %}
+        </div>
+        <div x-show="estado === 'cancelado'" x-cloak class="aviso alerta small">Cancelar {% if pedido.stock_descontado and not pedido.stock_devuelto %}devolverá al inventario el stock descontado.{% else %}no afecta el inventario (el stock no se había descontado).{% endif %}{% if pedido.estado_pago == "aprobado" %} El pago está aprobado: recuerda gestionar el reembolso en Wompi.{% endif %}</div>
+        {% with campo=form_estado.nota %}{% include "partials/campo.html" %}{% endwith %}
+        <button class="btn" type="submit" :disabled="!estado" :class="{ peligro: estado === 'cancelado' }">Guardar cambio de estado</button>
+      </form>
+    </section>
+    {% endif %}
+
+    <section class="vidrio tarjeta">
+      <h2>Línea de tiempo</h2>
+      <ol class="timeline" x-data>
+        {% for ev in pedido.eventos.all %}
+        <li class="{% if ev.estado == 'cancelado' %}cancelado{% endif %}">
+          <strong>{{ ev.titulo }}</strong>{% if not ev.visible_cliente %} <span class="badge suave">Interno</span>{% endif %}
+          <div class="fecha">{{ ev.creado|date:"j/m/Y g:i a" }}{% if ev.usuario %} · {{ ev.usuario.get_full_name|default:ev.usuario.email }}{% else %} · sistema{% endif %}</div>
+          {% if ev.nota %}<p class="small" style="margin:4px 0 0">{{ ev.nota|linebreaksbr }}</p>{% endif %}
+          {% if ev.foto %}<div class="evidencias"><button type="button" @click="$store.lightbox.abrir('{{ ev.get_foto_url }}', 'Evidencia')" aria-label="Ver evidencia"><img src="{{ ev.get_foto_url }}" alt="Evidencia" width="96" height="96" loading="lazy"></button></div>{% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="vidrio tarjeta">
+      <h2>Cliente</h2>
+      <p style="margin:0"><strong>{{ pedido.cliente_nombre }}</strong><br>
+        <a href="mailto:{{ pedido.cliente_email }}" hx-boost="false">{{ pedido.cliente_email }}</a><br>
+        <a href="https://wa.me/57{{ pedido.cliente_telefono|cut:'+57' }}" target="_blank" rel="noopener" hx-boost="false">{{ pedido.cliente_telefono }}</a>
+        {% if pedido.cliente_numero_documento %}<br><span class="small muted">{{ pedido.cliente_tipo_documento }} {{ pedido.cliente_numero_documento }}</span>{% endif %}</p>
+      <p class="small"><a href="{% url 'panel:cliente' pedido.usuario_id %}">Ver historial del cliente</a></p>
+      <h3 style="margin-top:12px">Dirección de envío</h3>
+      <div id="direccion-envio" class="small">{{ pedido.envio_nombre }} · {{ pedido.envio_telefono }}<br>{{ pedido.envio_direccion }}{% if pedido.envio_barrio %}, barrio {{ pedido.envio_barrio }}{% endif %}<br>{{ pedido.envio_municipio }}, {{ pedido.envio_departamento }}{% if pedido.envio_indicaciones %}<br>{{ pedido.envio_indicaciones }}{% endif %}</div>
+      <button class="btn chico sec" type="button" data-copiar="#direccion-envio" style="margin-top:8px">{% icono "copiar" 16 %} Copiar dirección</button>
+      {% if pedido.notas_cliente %}<p class="small" style="margin-top:10px"><strong>Nota del cliente:</strong> {{ pedido.notas_cliente }}</p>{% endif %}
+      {% if pedido.metodo_entrega %}<h3 style="margin-top:12px">Envío</h3><p class="small" style="margin:0">{{ pedido.get_metodo_entrega_display }}{% if pedido.transportadora %} · {{ pedido.transportadora }}{% endif %}{% if pedido.numero_guia %} · guía {{ pedido.numero_guia }}{% endif %}{% if pedido.entregado_por %} · {{ pedido.entregado_por }}{% endif %}{% if pedido.url_rastreo %}<br><a href="{{ pedido.url_rastreo }}" target="_blank" rel="noopener" hx-boost="false">Rastreo</a>{% endif %}</p>{% endif %}
+    </section>
+    <section class="vidrio tarjeta resumen">
+      <h2>Productos</h2>
+      <ul class="lista-simple">
+        {% for it in pedido.items.all %}<li><span>{% if it.imagen %}<img class="miniatura" src="{{ it.imagen }}" alt="" style="vertical-align:middle;margin-right:6px">{% endif %}{{ it.cantidad }} × {{ it.nombre }}<br><span class="small muted">{{ it.sku }} · {{ it.precio_unitario|cop }} c/u</span></span><strong>{{ it.subtotal|cop }}</strong></li>{% endfor %}
+      </ul>
+      <dl style="margin-top:10px">
+        <dt>Subtotal</dt><dd>{{ pedido.subtotal|cop }}</dd>
+        {% if pedido.descuentos %}<dt>Ahorro del cliente</dt><dd class="ahorro-txt">{{ pedido.descuentos|cop }}</dd>{% endif %}
+        <dt>Envío</dt><dd>{% if pedido.estado_pedido == "esperando_cotizacion" %}Por cotizar{% else %}{{ pedido.costo_envio|cop }}{% endif %}</dd>
+        <dt class="total">Total</dt><dd class="total">{{ pedido.total|cop }}</dd>
+      </dl>
+      <div class="regla-envio small">{{ pedido.regla_envio_aplicada }}</div>
+    </section>
+    <section class="vidrio tarjeta">
+      <h2>Pagos Wompi</h2>
+      {% for p in pedido.pagos.all %}
+      <div class="small" style="padding:6px 0;border-bottom:1px solid var(--borde)">
+        <strong>{{ p.referencia }}</strong> <span class="badge {% if p.estado == 'APPROVED' %}exito{% elif p.estado == 'PENDING' %}suave{% else %}error{% endif %}">{{ p.get_estado_display }}</span><br>
+        {{ p.monto_centavos|floatformat:0 }} centavos · {{ p.creado|date:"d/m/Y H:i" }}{% if p.transaccion_id %}<br>Transacción: {{ p.transaccion_id }}{% endif %}{% if p.metodo %} · {{ p.metodo }}{% endif %}{% if p.detalle %}<br><span class="muted">{{ p.detalle }}</span>{% endif %}
+      </div>
+      {% empty %}<p class="small muted">Sin intentos de pago.</p>{% endfor %}
+    </section>
+    <section class="vidrio tarjeta">{% include "panel/pedidos/_notas.html" %}</section>
+  </div>
+</div>
+<div class="modal-fondo" x-data x-show="$store.lightbox.abierto" x-cloak @click.self="$store.lightbox.cerrar()" @keydown.escape.window="$store.lightbox.cerrar()" role="dialog" aria-modal="true" aria-label="Evidencia">
+  <button class="modal-cerrar" type="button" @click="$store.lightbox.cerrar()" aria-label="Cerrar">×</button>
+  <img :src="$store.lightbox.src" :alt="$store.lightbox.alt">
+</div>
+{% endblock %}

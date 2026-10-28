@@ -1,0 +1,13 @@
+{% extends "panel/base.html" %}
+{% block titulo %}Páginas legales{% endblock %}
+{% block contenido %}
+<div class="panel-cab"><h1>Páginas legales</h1></div>
+{% include "panel/contenido/_tabs.html" %}
+<div class="aviso alerta">Los textos base cubren la Ley 1480 de 2011 (incluido el derecho de retracto) y la Ley 1581 de 2012, pero son un <strong>borrador</strong>: deben ser revisados por un abogado.</div>
+<div class="vidrio tarjeta" style="padding:8px"><table class="tabla"><thead><tr><th>Página</th><th>Estado</th><th>Actualizada</th><th></th></tr></thead><tbody>
+{% for p in paginas %}<tr><td><strong>{{ p.titulo }}</strong><div class="small muted">{{ p.get_absolute_url }}</div></td>
+  <td>{% if p.borrador_revision %}<span class="badge alerta">Pendiente de revisión</span>{% else %}<span class="badge exito">Revisada</span>{% endif %}{% if not p.activa %} <span class="badge suave">Oculta</span>{% endif %}</td>
+  <td class="small">{{ p.actualizado|date:"d/m/Y" }}</td>
+  <td class="acciones-fila"><a class="btn chico borde" href="{% url 'panel:legal_editar' p.pk %}">Editar</a></td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

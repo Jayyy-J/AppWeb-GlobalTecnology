@@ -1,0 +1,17 @@
+<div class="galeria-admin" data-sortable="{% url 'panel:imagenes_orden' producto.pk %}">
+  {% for im in imagenes %}
+  <div class="foto-admin{% if im.es_principal %} principal{% endif %}" data-id="{{ im.pk }}">
+    {% if im.es_principal %}<span class="badge tag">Principal</span>{% endif %}
+    <img src="{{ im.url_thumb }}" alt="{{ im.alt }}" width="140" height="140" loading="lazy">
+    <input class="input" style="min-height:32px;padding:4px 8px;font-size:.8rem;margin-top:6px" type="text" name="texto_alternativo" value="{{ im.texto_alternativo }}"
+      aria-label="Texto alternativo" placeholder="Texto alternativo"
+      hx-post="{% url 'panel:imagen_alt' im.pk %}" hx-trigger="change" hx-swap="none">
+    <div class="barra">
+      {% if not im.es_principal %}<button class="btn chico sec" type="button" hx-post="{% url 'panel:imagen_principal' im.pk %}" hx-target="#galeria-producto">Principal</button>{% else %}<span></span>{% endif %}
+      <button class="btn icono chico borde" type="button" hx-post="{% url 'panel:imagen_eliminar' im.pk %}" hx-target="#galeria-producto" hx-confirm="¿Eliminar esta foto?" aria-label="Eliminar foto">{% icono "basura" 16 %}</button>
+    </div>
+  </div>
+  {% empty %}
+  <p class="muted small">Este producto aún no tiene fotos.</p>
+  {% endfor %}
+</div>

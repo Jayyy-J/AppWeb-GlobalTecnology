@@ -1,0 +1,23 @@
+{% extends "panel/base.html" %}
+{% block titulo %}Productos de {{ cat.nombre }}{% endblock %}
+{% block contenido %}
+<div class="panel-cab"><div><a class="small" href="{% url 'panel:categorias' %}">‹ Categorías</a><h1>Productos en «{{ cat }}»</h1></div></div>
+<div class="grid-panel dos">
+  <section class="vidrio tarjeta">
+    <h2>Asignados ({{ asignados|length }})</h2>
+    <form method="post">{% csrf_token %}<input type="hidden" name="accion" value="quitar">
+      <ul class="lista-simple" style="max-height:520px;overflow:auto">
+        {% for p in asignados %}<li><label class="check-linea" style="margin:0"><input type="checkbox" name="producto" value="{{ p.pk }}"> <span>{{ p.nombre }} <span class="small muted">{{ p.sku }}</span></span></label></li>
+        {% empty %}<li class="muted">Sin productos.</li>{% endfor %}
+      </ul>
+      {% if asignados %}<button class="btn chico peligro" type="submit" style="margin-top:10px">Quitar seleccionados</button>{% endif %}
+    </form>
+  </section>
+  <section class="vidrio tarjeta">
+    <h2>Agregar productos</h2>
+    <input class="input" type="search" name="q" value="{{ q }}" placeholder="Buscar por nombre o SKU" aria-label="Buscar productos"
+      hx-get="{% url 'panel:categoria_productos' cat.pk %}" hx-target="#disponibles" hx-trigger="keyup changed delay:300ms, search" hx-push-url="false">
+    <div id="disponibles" style="margin-top:10px">{% include "panel/categorias/_disponibles.html" %}</div>
+  </section>
+</div>
+{% endblock %}

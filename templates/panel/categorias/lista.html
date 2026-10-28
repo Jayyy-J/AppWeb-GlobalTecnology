@@ -1,0 +1,40 @@
+{% extends "panel/base.html" %}
+{% block titulo %}Categorías{% endblock %}
+{% block contenido %}
+<div class="panel-cab"><h1>Categorías</h1><a class="btn" href="{% url 'panel:categoria_nueva' %}">{% icono "mas" 18 %} Nueva categoría</a></div>
+<p class="muted small">Arrastra con {% icono "arrastrar" 14 %} para cambiar el orden del menú. Las subcategorías se ordenan dentro de su categoría.</p>
+<ul class="arbol" data-sortable="{% url 'panel:categorias_orden' %}" data-handle=".asa">
+  {% for c in raices %}
+  <li class="cat" data-id="{{ c.pk }}">
+    <div class="row between">
+      <div class="row"><span class="asa" aria-label="Arrastrar para ordenar">{% icono "arrastrar" 20 %}</span>
+        {% if c.imagen %}<img class="miniatura" src="{{ c.imagen.url }}" alt="">{% endif %}
+        <div><strong>{{ c.nombre }}</strong> <span class="small muted">/{{ c.slug }} · {{ c.n }} productos</span>
+          {% if not c.activa %}<span class="badge suave">Inactiva</span>{% endif %}{% if not c.mostrar_en_menu %}<span class="badge suave">Oculta en menú</span>{% endif %}</div>
+      </div>
+      <div class="row">
+        <a class="btn chico sec" href="{% url 'panel:categoria_productos' c.pk %}">Productos</a>
+        <a class="btn chico borde" href="{% url 'panel:categoria_editar' c.pk %}">Editar</a>
+        <a class="btn chico borde" href="{% url 'panel:categoria_eliminar' c.pk %}" aria-label="Eliminar {{ c.nombre }}">{% icono "basura" 16 %}</a>
+      </div>
+    </div>
+    {% if c.lista_hijas %}
+    <ul class="hijas" data-sortable="{% url 'panel:categorias_orden' %}" data-handle=".asa">
+      {% for h in c.lista_hijas %}
+      <li data-id="{{ h.pk }}" class="row between">
+        <div class="row"><span class="asa">{% icono "arrastrar" 16 %}</span> {{ h.nombre }} <span class="small muted">· {{ h.n }} productos</span>{% if not h.activa %}<span class="badge suave">Inactiva</span>{% endif %}</div>
+        <div class="row">
+          <a class="btn chico sec" href="{% url 'panel:categoria_productos' h.pk %}">Productos</a>
+          <a class="btn chico borde" href="{% url 'panel:categoria_editar' h.pk %}">Editar</a>
+          <a class="btn chico borde" href="{% url 'panel:categoria_eliminar' h.pk %}" aria-label="Eliminar {{ h.nombre }}">{% icono "basura" 16 %}</a>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </li>
+  {% empty %}
+  <li class="muted">Aún no hay categorías.</li>
+  {% endfor %}
+</ul>
+{% endblock %}
