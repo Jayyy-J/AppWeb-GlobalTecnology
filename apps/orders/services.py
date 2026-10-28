@@ -156,3 +156,150 @@ def registrar_evento(order, estado, titulo=None, nota="", foto=None, usuario=Non
         ev.foto = foto
     ev.save()
     return ev
+
+
+# ---------------------------------------------------------------- stock
+def descontar_stock(order):
+    """Descuenta el stock una sola vez (idempotente vía `stock_descontado`), de forma atómica."""
+    with transaction.atomic():
+        order = Order.objects.select_for_update().get(pk=order.pk)
+        if order.stock_descontado:
+            return False
+        items = list(order.items.all())
+        ids = sorted({i.producto_id for i in items if i.producto_id})
+        productos = {p.pk: p for p in Product.objects.select_for_update().filter(pk__in=ids).order_by("pk")}
+        faltantes = []
+        for it in items:
+            p = productos.get(it.producto_id)
+            if p is None:
+                faltantes.append(f"{it.nombre}: el producto ya no existe")
+                continue
+            if p.stock < it.cantidad:
+                faltantes.append(f"{it.nombre}: pedidas {it.cantidad}, disponibles {p.stock}")
+                Product.objects.filter(pk=p.pk).update(stock=0)
+            else:
+                Product.objects.filter(pk=p.pk).update(stock=F("stock") - it.cantidad)
+        order.stock_descontado = True
+        campos = ["stock_descontado", "actualizado"]
+        if faltantes:
+            order.alerta_stock = True
+            order.alerta_detalle = (order.alerta_detalle + "\n" if order.alerta_detalle else "") + (
+                "Stock insuficiente al aprobar el pago: " + "; ".join(faltantes)
+            )
+            campos += ["alerta_stock", "alerta_detalle"]
+            logger.error("stock_insuficiente pedido=%s detalle=%s", order.numero, "; ".join(faltantes))
+        order.save(update_fields=campos)
+        return True
+
+
+def devolver_stock(order):
+    with transaction.atomic():
+        order = Order.objects.select_for_update().get(pk=order.pk)
+        if not order.stock_descontado or order.stock_devuelto:
+            return False
+        for it in order.items.all():
+            if it.producto_id:
+                Product.objects.filter(pk=it.producto_id).update(stock=F("stock") + it.cantidad)
+        order.stock_devuelto = True
+        order.save(update_fields=["stock_devuelto", "actualizado"])
+        return True
+
+
+# ---------------------------------------------------------------- estados
+def validar_transicion(order, nuevo, *, foto=None, metodo_entrega=None, transportadora="", entregado_por="",
+                       desde_cotizacion=False):
+    """Reglas de negocio de cada transición. Lanza TransicionInvalida con mensajes en español."""
+    actual = order.estado_pedido
+    if nuevo not in TRANSICIONES.get(actual, set()):
+        raise TransicionInvalida(
+            f"No se puede pasar de «{EstadoPedido(actual).label}» a «{EstadoPedido(nuevo).label}»."
+        )
+    if nuevo == EstadoPedido.PENDIENTE_PAGO and actual == EstadoPedido.ESPERANDO_COTIZACION and not desde_cotizacion:
+        raise TransicionInvalida("Para habilitar el pago ingresa primero la cotización del envío.")
+    if nuevo == EstadoPedido.EN_PROCESO and order.estado_pago != EstadoPago.APROBADO:
+        raise TransicionInvalida("Solo se puede pasar a «En proceso» cuando el pago está aprobado.")
+    if nuevo == EstadoPedido.ENVIADO:
+        errores = {}
+        if metodo_entrega not in MetodoEntrega.values:
+            errores["metodo_entrega"] = "Elige si el envío es por transportadora o entrega personal."
+        if not foto:
+            errores["foto"] = (
+                "Sube la foto de la guía o del flete." if metodo_entrega == MetodoEntrega.TRANSPORTADORA
+                else "Sube la foto de la entrega o del paquete listo."
+            )
+        if metodo_entrega == MetodoEntrega.TRANSPORTADORA and not (transportadora or "").strip():
+            errores["transportadora"] = "Indica el nombre de la transportadora."
+        if metodo_entrega == MetodoEntrega.PERSONAL and not (entregado_por or "").strip():
+            errores["entregado_por"] = "Indica el nombre de quien entrega."
+        if errores:
+            raise TransicionInvalida(errores)
+    if nuevo == EstadoPedido.ENTREGADO and order.metodo_entrega == MetodoEntrega.PERSONAL and not foto:
+        raise TransicionInvalida({"foto": "En entregas personales la foto de la entrega es obligatoria."})
+
+
+def cambiar_estado(order, nuevo, *, usuario=None, nota="", foto=None, metodo_entrega=None, transportadora="",
+                   numero_guia="", url_rastreo="", entregado_por="", sistema=False, desde_cotizacion=False, titulo=None):
+    """Única puerta para cambiar `estado_pedido`. Valida, guarda, registra el evento y notifica."""
+    with transaction.atomic():
+        order = Order.objects.select_for_update().get(pk=order.pk)
+        validar_transicion(order, nuevo, foto=foto, metodo_entrega=metodo_entrega, transportadora=transportadora,
+                           entregado_por=entregado_por, desde_cotizacion=desde_cotizacion)
+        if nuevo == EstadoPedido.ENVIADO:
+            order.metodo_entrega = metodo_entrega
+            if metodo_entrega == MetodoEntrega.TRANSPORTADORA:
+                order.transportadora = transportadora.strip()
+                order.numero_guia = (numero_guia or "").strip()
+                order.url_rastreo = (url_rastreo or "").strip()
+                order.entregado_por = ""
+            else:
+                order.entregado_por = entregado_por.strip()
+                order.transportadora = order.numero_guia = order.url_rastreo = ""
+        order.estado_pedido = nuevo
+        order.save()
+        if nuevo == EstadoPedido.CANCELADO:
+            devolver_stock(order)
+            order.refresh_from_db()
+        ev = registrar_evento(order, nuevo, titulo=titulo, nota=nota, foto=foto, usuario=usuario)
+
+    url = url_absoluta(order.get_absolute_url())
+    if nuevo == EstadoPedido.ENVIADO:
+        adjuntos = []
+        if ev.foto:
+            try:
+                with ev.foto.open("rb") as fh:
+                    adjuntos.append(("evidencia-envio.webp", fh.read(), "image/webp"))
+            except OSError:
+                pass
+        send_templated("pedido_enviado", f"Tu pedido {order.numero} va en camino", order.cliente_email,
+                       {"pedido": order, "evento": ev, "url_pedido": url}, attachments=adjuntos)
+    elif nuevo == EstadoPedido.ENTREGADO:
+        send_templated("pedido_entregado", f"Pedido {order.numero} entregado", order.cliente_email,
+                       {"pedido": order, "evento": ev, "url_pedido": url})
+    logger.info("pedido_estado numero=%s estado=%s usuario=%s", order.numero, nuevo, getattr(usuario, "pk", "sistema"))
+    return order
+
+
+def cancelar(order, usuario=None, nota=""):
+    return cambiar_estado(order, EstadoPedido.CANCELADO, usuario=usuario, nota=nota)
+
+
+def registrar_cotizacion(order, costo_envio: int, nota: str = "", usuario=None):
+    """Flujo de cotización manual: fija el envío, recalcula el total y habilita el pago."""
+    with transaction.atomic():
+        order = Order.objects.select_for_update().get(pk=order.pk)
+        if order.estado_pedido != EstadoPedido.ESPERANDO_COTIZACION:
+            raise TransicionInvalida("Este pedido no está esperando cotización.")
+        order.costo_envio = int(costo_envio)
+        order.total = order.subtotal + order.costo_envio
+        from apps.core.templatetags.cop import format_cop
+
+        order.regla_envio_aplicada = f"Envío cotizado a {order.envio_municipio}: {format_cop(order.costo_envio)}"
+        order.save()
+        cambiar_estado(order, EstadoPedido.PENDIENTE_PAGO, usuario=usuario, desde_cotizacion=True,
+                       titulo="Envío cotizado · pendiente de pago",
+                       nota=(nota or f"Envío cotizado: {format_cop(order.costo_envio)}. Ya puedes pagar tu pedido."))
+        order.refresh_from_db()
+    url = url_absoluta(order.get_absolute_url())
+    send_templated("cotizacion_lista", f"Tu envío está cotizado · Pedido {order.numero}", order.cliente_email,
+                   {"pedido": order, "nota": nota, "url_pagar": url, "url_pedido": url})
+    return order

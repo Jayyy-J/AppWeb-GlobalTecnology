@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block titulo %}Redirigiendo a Wompi · {{ tienda.nombre }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block contenido %}
+<div class="auth" style="max-width:520px">
+  <div class="vidrio fuerte tarjeta center">
+    <span class="spinner" aria-hidden="true" style="width:36px;height:36px;border-width:3px"></span>
+    <h1 style="margin-top:16px">Te llevamos al pago seguro</h1>
+    <p class="muted">Pedido <strong>{{ pedido.numero }}</strong> · Total <strong>{{ pedido.total|cop }}</strong></p>
+    <p class="small muted">En el checkout de Wompi podrás pagar con tarjeta, PSE, Nequi, Bancolombia y más. Nunca escribes los datos de tu tarjeta en nuestro sitio.</p>
+    <form id="form-wompi" action="{{ accion }}" method="get" hx-boost="false">
+      {% for nombre, valor in campos %}<input type="hidden" name="{{ nombre }}" value="{{ valor }}">{% endfor %}
+      <button class="btn bloque" type="submit">Continuar a Wompi</button>
+    </form>
+    <p id="aviso-volver" hidden class="small" style="margin-top:12px">¿Volviste desde Wompi? Puedes <a href="{{ pedido.get_absolute_url }}">ver tu pedido</a> o continuar al pago con el botón.</p>
+    <p class="small muted" style="margin-top:12px">Referencia: {{ pago.referencia }}</p>
+  </div>
+</div>
+<script>
+  (function () {
+    // Si el cliente volvió con "Atrás" desde Wompi no se reenvía automáticamente.
+    var nav = (performance.getEntriesByType && performance.getEntriesByType("navigation")[0]) || {};
+    if (nav.type === "back_forward") {
+      var aviso = document.getElementById("aviso-volver");
+      if (aviso) aviso.hidden = false;
+      return;
+    }
+    setTimeout(function () { var f = document.getElementById("form-wompi"); if (f) f.submit(); }, 600);
+  })();
+</script>
+{% endblock %}

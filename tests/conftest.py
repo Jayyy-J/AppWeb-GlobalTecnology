@@ -108,3 +108,35 @@ def catalogo(db):
     }
     return {"cats": {"cel": cel, "smart": smart, "comp": comp, "port": port},
             "marcas": {"samsung": samsung, "lenovo": lenovo}, **productos}
+
+
+@pytest.fixture
+def pedido(cliente, catalogo, direccion):
+    """Pedido pendiente de pago con 2 × Galaxy A55 (1.800.000 c/u) y envío gratis."""
+    from apps.cart.services import add_item
+    from apps.orders.services import crear_pedido
+    from apps.shipping.services import cotizar_envio
+
+    add_item(cliente, catalogo["a55"], 2)
+    contacto = {"first_name": "Ana", "last_name": "Pérez", "email": cliente.email, "telefono": "3001112233",
+                "tipo_documento": "CC", "numero_documento": "123456"}
+    return crear_pedido(cliente, direccion, contacto, cotizar_envio(3600000, direccion.municipio))
+
+
+def evento_wompi(tx, secret="test_events_secret", timestamp=1530291411, alterar=None):
+    """Construye un evento transaction.updated firmado como lo hace Wompi."""
+    import hashlib
+
+    props = ["transaction.id", "transaction.status", "transaction.amount_in_cents"]
+    raw = f"{tx['id']}{tx['status']}{tx['amount_in_cents']}{timestamp}{secret}"
+    ev = {
+        "event": "transaction.updated",
+        "data": {"transaction": dict(tx)},
+        "environment": "test",
+        "signature": {"properties": props, "checksum": hashlib.sha256(raw.encode()).hexdigest()},
+        "timestamp": timestamp,
+        "sent_at": "2026-10-27T12:00:00.000Z",
+    }
+    if alterar:
+        alterar(ev)
+    return ev
