@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block titulo %}Finalizar compra · {{ tienda.nombre }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block contenido %}
+<nav class="migas" aria-label="Migas de pan"><ol><li><a href="{% url 'cart:detalle' %}">Carrito</a></li><li aria-current="page">Finalizar compra</li></ol></nav>
+<h1>Finalizar compra</h1>
+<form method="post" novalidate class="dos-col pasos" x-data="{ sel: '{{ seleccion }}' }" id="form-checkout">
+  {% csrf_token %}
+  <div class="stack">
+    {% include "partials/form_errores.html" %}
+    <!-- 1. Dirección -->
+    <section class="vidrio tarjeta paso">
+      <h2>Dirección de envío</h2>
+      <input type="hidden" name="direccion" :value="sel">
+      {% for d in direcciones %}
+      <label class="opcion-dir">
+        <input type="radio" name="direccion_radio" value="{{ d.pk }}" x-model="sel" {% if seleccion == d.pk|stringformat:"s" %}checked{% endif %}
+          hx-get="{% url 'orders:checkout_resumen' %}?direccion={{ d.pk }}" hx-target="#resumen-checkout" hx-trigger="change" hx-push-url="false">
+        <span>
+          <strong>{{ d.alias }}</strong> {% if d.es_predeterminada %}<span class="badge suave">Predeterminada</span>{% endif %}<br>
+          {{ d.nombre_recibe }} · {{ d.telefono }}<br>
+          <span class="muted small">{{ d.as_text }}</span>
+        </span>
+      </label>
+      {% endfor %}
+      <label class="opcion-dir">
+        <input type="radio" name="direccion_radio" value="nueva" x-model="sel" {% if seleccion == "nueva" %}checked{% endif %}
+          hx-get="{% url 'orders:checkout_resumen' %}?direccion=nueva" hx-target="#resumen-checkout" hx-trigger="change" hx-include="#id_nueva-municipio" hx-push-url="false">
+        <span><strong>{% icono "mas" 16 %} Usar una dirección nueva</strong></span>
+      </label>
+      <div x-show="sel === 'nueva'" {% if seleccion != "nueva" %}x-cloak{% endif %} style="margin-top:12px"
+           hx-get="{% url 'orders:checkout_resumen' %}?direccion=nueva" hx-trigger="change from:#id_nueva-municipio" hx-target="#resumen-checkout" hx-include="#id_nueva-municipio" hx-push-url="false">
+        {% with form=addr_form %}{% include "partials/form_errores.html" %}{% include "accounts/_direccion_campos.html" %}{% endwith %}
+      </div>
+    </section>
+
+    <!-- 2. Contacto -->
+    <section class="vidrio tarjeta paso">
+      <h2>Datos de contacto</h2>
+      <p class="small muted">El documento lo solicita Wompi para pagos con PSE.</p>
+      <div class="grid-form dos">
+        {% with campo=form.first_name %}{% include "partials/campo.html" %}{% endwith %}
+        {% with campo=form.last_name %}{% include "partials/campo.html" %}{% endwith %}
+        {% with campo=form.email %}{% include "partials/campo.html" %}{% endwith %}
+        {% with campo=form.telefono %}{% include "partials/campo.html" %}{% endwith %}
+        {% with campo=form.tipo_documento %}{% include "partials/campo.html" %}{% endwith %}
+        {% with campo=form.numero_documento %}{% include "partials/campo.html" %}{% endwith %}
+        <div class="ancho">{% with campo=form.notas_cliente %}{% include "partials/campo.html" %}{% endwith %}</div>
+      </div>
+    </section>
+  </div>
+
+  <!-- 3. Resumen + 4. Términos + 5. Pagar -->
+  <aside class="vidrio fuerte tarjeta resumen paso">
+    <h2>Resumen</h2>
+    <div id="resumen-checkout">{% include "orders/_resumen_checkout.html" %}</div>
+    {% with campo=form.acepta_terminos %}
+    <div class="campo{% if campo.errors %} con-error{% endif %}">
+      <label class="check-linea" for="{{ campo.id_for_label }}">{{ campo }} <span class="small">Acepto los <a href="{% url 'storefront:legal' 'terminos-y-condiciones' %}" target="_blank">términos y condiciones</a>, la <a href="{% url 'storefront:legal' 'politica-de-envios' %}" target="_blank">política de envíos</a> y la <a href="{% url 'storefront:legal' 'politica-de-privacidad' %}" target="_blank">política de privacidad</a>.</span></label>
+      {% for e in campo.errors %}<div class="error" role="alert">{{ e }}</div>{% endfor %}
+    </div>
+    {% endwith %}
+    <button class="btn bloque" type="submit" id="btn-pagar">{% icono "escudo" 18 %} <span id="texto-pagar">Pagar con Wompi</span></button>
+    <p class="small muted center" style="margin-top:10px">Serás redirigido al checkout seguro de Wompi (tarjeta, PSE, Nequi, Bancolombia). Nunca escribes los datos de tu tarjeta en nuestro sitio.</p>
+  </aside>
+</form>
+{% endblock %}

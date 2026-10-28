@@ -1,0 +1,22 @@
+<div class="grid-form dos">
+  {% with campo=form.alias %}{% include "partials/campo.html" %}{% endwith %}
+  {% with campo=form.nombre_recibe %}{% include "partials/campo.html" %}{% endwith %}
+  {% with campo=form.telefono %}{% include "partials/campo.html" %}{% endwith %}
+  <div class="campo{% if form.departamento.errors %} con-error{% endif %}">
+    <label for="{{ form.departamento.id_for_label }}">Departamento</label>
+    <select name="{{ form.departamento.html_name }}" id="{{ form.departamento.id_for_label }}" class="input" required
+      hx-get="{% url 'shipping:municipios' %}" hx-target="#{{ form.municipio.id_for_label }}" hx-trigger="change" hx-swap="innerHTML" hx-include="this" hx-sync="this:replace">
+      {% for val, label in form.departamento.field.choices %}<option value="{{ val }}" {% if val|stringformat:"s" == form.departamento.value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    {% for e in form.departamento.errors %}<div class="error">{{ e }}</div>{% endfor %}
+  </div>
+  <div class="campo{% if form.municipio.errors %} con-error{% endif %}">
+    <label for="{{ form.municipio.id_for_label }}">Municipio</label>
+    {{ form.municipio }}
+    {% for e in form.municipio.errors %}<div class="error">{{ e }}</div>{% endfor %}
+  </div>
+  <div class="ancho">{% with campo=form.direccion %}{% include "partials/campo.html" %}{% endwith %}</div>
+  {% with campo=form.barrio %}{% include "partials/campo.html" %}{% endwith %}
+  {% with campo=form.indicaciones %}{% include "partials/campo.html" %}{% endwith %}
+  <div class="ancho">{% with campo=form.es_predeterminada %}{% include "partials/campo.html" %}{% endwith %}</div>
+</div>

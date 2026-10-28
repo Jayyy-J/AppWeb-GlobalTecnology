@@ -1,0 +1,17 @@
+<div class="vidrio tarjeta" style="padding:8px"><div class="tabla-wrap"><table class="tabla">
+  <thead><tr><th>Pedido</th><th>Fecha</th><th>Cliente</th><th>Destino</th><th class="num">Total</th><th>Pago</th><th>Estado</th></tr></thead>
+  <tbody>
+  {% for o in pagina %}
+  <tr class="{% if o.alerta_stock %}fila-alerta{% endif %}">
+    <td><a href="{% url 'panel:pedido' o.numero %}"><strong>{{ o.numero }}</strong></a>{% if o.alerta_stock %} <span class="badge error" title="Alerta">!</span>{% endif %}</td>
+    <td class="small">{{ o.creado|date:"d/m/Y H:i" }}</td>
+    <td>{{ o.cliente_nombre }}<div class="small muted">{{ o.cliente_email }}</div></td>
+    <td class="small">{{ o.envio_municipio }}, {{ o.envio_departamento }}</td>
+    <td class="num"><strong>{{ o.total|cop }}</strong></td>
+    <td><span class="badge {% if o.estado_pago == 'aprobado' %}exito{% elif o.estado_pago == 'pendiente' %}suave{% else %}error{% endif %}">{{ o.get_estado_pago_display }}</span></td>
+    <td><span class="badge {% if o.estado_pedido == 'esperando_cotizacion' or o.estado_pedido == 'en_proceso' %}alerta{% elif o.estado_pedido == 'entregado' %}exito{% elif o.estado_pedido == 'cancelado' %}error{% else %}suave{% endif %}">{{ o.get_estado_pedido_display }}</span></td>
+  </tr>
+  {% empty %}<tr><td colspan="7" class="center muted" style="padding:30px">No hay pedidos con estos filtros.</td></tr>{% endfor %}
+  </tbody>
+</table></div></div>
+{% include "panel/_paginacion.html" with target="#tabla-pedidos" %}

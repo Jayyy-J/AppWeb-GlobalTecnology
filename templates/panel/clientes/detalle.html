@@ -1,0 +1,31 @@
+{% extends "panel/base.html" %}
+{% block titulo %}{{ cliente }}{% endblock %}
+{% block contenido %}
+<div class="panel-cab"><div><a class="small" href="{% url 'panel:clientes' %}">‹ Clientes</a><h1>{{ cliente.get_full_name|default:cliente.email }}</h1></div>
+  <div class="row">
+    {% if cliente != user %}
+    <form method="post" action="{% url 'panel:cliente_activar' cliente.pk %}">{% csrf_token %}<button class="btn chico {% if cliente.is_active %}peligro{% else %}exito{% endif %}" type="submit">{% if cliente.is_active %}Desactivar cuenta{% else %}Activar cuenta{% endif %}</button></form>
+    {% if user.is_superuser %}<form method="post" action="{% url 'panel:cliente_staff' cliente.pk %}">{% csrf_token %}<button class="btn chico borde" type="submit">{% if cliente.is_staff %}Quitar acceso al panel{% else %}Dar acceso al panel (staff){% endif %}</button></form>{% endif %}
+    {% endif %}
+  </div>
+</div>
+<div class="kpis">
+  <div class="vidrio kpi"><div class="etiqueta">Total comprado</div><div class="valor">{{ total|cop }}</div></div>
+  <div class="vidrio kpi"><div class="etiqueta">Pedidos</div><div class="valor">{{ pedidos|length }}</div></div>
+  <div class="vidrio kpi"><div class="etiqueta">Cliente desde</div><div class="valor" style="font-size:1.1rem">{{ cliente.date_joined|date:"j M Y" }}</div></div>
+  <div class="vidrio kpi"><div class="etiqueta">Estado</div><div class="valor" style="font-size:1.1rem">{% if cliente.is_active %}Activo{% else %}Inactivo{% endif %}{% if cliente.is_staff %} · Staff{% endif %}</div></div>
+</div>
+<div class="grid-panel tres">
+  <section class="vidrio tarjeta"><h2>Pedidos</h2>
+    <div class="tabla-wrap"><table class="tabla"><thead><tr><th>Pedido</th><th>Fecha</th><th class="num">Total</th><th>Estado</th></tr></thead><tbody>
+    {% for o in pedidos %}<tr><td><a href="{% url 'panel:pedido' o.numero %}">{{ o.numero }}</a></td><td class="small">{{ o.creado|date:"d/m/Y" }}</td><td class="num">{{ o.total|cop }}</td><td>{% include "orders/_badges_estado.html" with pedido=o %}</td></tr>
+    {% empty %}<tr><td colspan="4" class="muted center">Sin pedidos.</td></tr>{% endfor %}</tbody></table></div>
+  </section>
+  <section class="vidrio tarjeta"><h2>Datos</h2>
+    <p class="small">{{ cliente.email }}<br>{{ cliente.telefono }}<br>{{ cliente.get_tipo_documento_display }} {{ cliente.numero_documento }}<br>
+      Tratamiento de datos: {% if cliente.acepta_tratamiento_datos %}aceptado el {{ cliente.fecha_aceptacion_datos|date:"d/m/Y H:i" }}{% else %}no registrado{% endif %}</p>
+    <h3>Direcciones</h3>
+    {% for d in direcciones %}<p class="small"><strong>{{ d.alias }}</strong>{% if d.es_predeterminada %} (predeterminada){% endif %}<br>{{ d.as_text }}</p>{% empty %}<p class="small muted">Sin direcciones.</p>{% endfor %}
+  </section>
+</div>
+{% endblock %}

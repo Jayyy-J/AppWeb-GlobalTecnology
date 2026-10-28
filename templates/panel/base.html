@@ -1,0 +1,66 @@
+{% load static %}<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="htmx-config" content='{"attributesToSettle": ["width", "height"], "historyCacheSize": 10}'>
+  <title>{% block titulo %}Panel{% endblock %} · {{ tienda.nombre }}</title>
+  <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  <link rel="stylesheet" href="{% static 'css/panel.css' %}">
+  <script src="{% static 'vendor/htmx-2.0.3.min.js' %}" defer></script>
+  <script src="{% static 'vendor/sortable-1.15.3.min.js' %}" defer></script>
+  <script src="{% static 'js/app.js' %}" defer></script>
+  <script src="{% static 'js/panel.js' %}" defer></script>
+  <script src="{% static 'vendor/alpinejs-3.14.3.min.js' %}" defer></script>
+  {% block head_extra %}{% endblock %}
+</head>
+<body hx-boost="true" hx-indicator="#barra-progreso">
+  <a class="saltar" href="#panel-contenido">Saltar al contenido</a>
+  <div id="barra-progreso" class="barra-progreso" aria-hidden="true"></div>
+  <div class="panel-layout" x-data>
+    <div class="panel-fondo" x-show="$store.ui.menu" x-cloak @click="$store.ui.menu = false"></div>
+    <aside class="panel-sidebar" :class="{ abierto: $store.ui.menu }" aria-label="Menú del panel">
+      <a class="logo" href="{% url 'panel:dashboard' %}"><span class="marca-g" aria-hidden="true">G</span><span>Panel <span class="azul">GT</span></span></a>
+      <nav class="panel-nav">
+        <a href="{% url 'panel:dashboard' %}" class="{% if seccion == 'dashboard' %}activo{% endif %}">{% icono "tablero" 20 %} Dashboard</a>
+        <div class="grupo">Ventas</div>
+        <a href="{% url 'panel:pedidos' %}" class="{% if seccion == 'pedidos' %}activo{% endif %}">{% icono "pedidos" 20 %} Pedidos</a>
+        <a href="{% url 'panel:clientes' %}" class="{% if seccion == 'clientes' %}activo{% endif %}">{% icono "grupo" 20 %} Clientes</a>
+        <a href="{% url 'panel:envios' %}" class="{% if seccion == 'envios' %}activo{% endif %}">{% icono "camion" 20 %} Envíos</a>
+        <div class="grupo">Catálogo</div>
+        <a href="{% url 'panel:productos' %}" class="{% if seccion == 'productos' %}activo{% endif %}">{% icono "caja" 20 %} Productos</a>
+        <a href="{% url 'panel:categorias' %}" class="{% if seccion == 'categorias' %}activo{% endif %}">{% icono "carpeta" 20 %} Categorías</a>
+        <a href="{% url 'panel:marcas' %}" class="{% if seccion == 'marcas' %}activo{% endif %}">{% icono "etiqueta" 20 %} Marcas</a>
+        <div class="grupo">Tienda</div>
+        <a href="{% url 'panel:tienda' %}" class="{% if seccion == 'contenido' %}activo{% endif %}">{% icono "engranaje" 20 %} Contenido</a>
+        <a href="{% url 'panel:reportes' %}" class="{% if seccion == 'reportes' %}activo{% endif %}">{% icono "descargar" 20 %} Reportes</a>
+        <a href="{% url 'panel:auditoria' %}" class="{% if seccion == 'auditoria' %}activo{% endif %}">{% icono "historial" 20 %} Auditoría</a>
+        <div class="grupo">Sitio</div>
+        <a href="{% url 'storefront:home' %}" target="_blank" rel="noopener" hx-boost="false">{% icono "tienda" 20 %} Ver tienda</a>
+        <form method="post" action="{% url 'accounts:logout' %}" hx-boost="false">{% csrf_token %}<button class="btn-link" style="padding:10px 12px;text-decoration:none;color:var(--agotado)" type="submit">{% icono "salir" 20 %} Cerrar sesión</button></form>
+      </nav>
+    </aside>
+    <div class="panel-main">
+      <header class="panel-top">
+        <button class="btn icono borde solo-movil" style="display:flex" type="button" @click="$store.ui.menu = true" aria-label="Abrir menú">{% icono "menu" %}</button>
+        <form action="{% url 'panel:pedidos' %}" method="get" class="grow" style="max-width:420px">
+          <label class="sr-only" for="buscar-panel">Buscar pedido</label>
+          <input id="buscar-panel" class="input" type="search" name="q" placeholder="Buscar pedido por número, cliente o email" style="min-height:40px">
+        </form>
+        <span class="small muted solo-escritorio">{{ user.get_full_name|default:user.email }}</span>
+      </header>
+      <main id="panel-contenido" class="panel-contenido" tabindex="-1">
+        {% block contenido %}{% endblock %}
+      </main>
+    </div>
+  </div>
+  {% include "partials/mensajes.html" %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>

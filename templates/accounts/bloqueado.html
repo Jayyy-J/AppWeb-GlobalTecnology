@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block titulo %}Demasiados intentos · {{ tienda.nombre }}{% endblock %}
+{% block contenido %}
+<div class="auth"><div class="vidrio fuerte tarjeta center">
+  <h1>Demasiados intentos</h1>
+  <p class="muted">Por seguridad bloqueamos temporalmente el inicio de sesión. Intenta de nuevo en 30 minutos o recupera tu contraseña.</p>
+  <a class="btn" href="{% url 'accounts:recuperar' %}">Recuperar contraseña</a>
+</div></div>
+{% endblock %}

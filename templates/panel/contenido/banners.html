@@ -1,0 +1,17 @@
+{% extends "panel/base.html" %}
+{% block titulo %}Banners{% endblock %}
+{% block contenido %}
+<div class="panel-cab"><h1>Banners del inicio</h1><a class="btn" href="{% url 'panel:banner_nuevo' %}">{% icono "mas" 18 %} Nuevo banner</a></div>
+{% include "panel/contenido/_tabs.html" %}
+<div class="grid-panel" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">
+  {% for b in banners %}
+  <article class="vidrio tarjeta">
+    <img src="{{ b.imagen_escritorio.url }}" alt="" style="border-radius:12px;aspect-ratio:16/6;object-fit:cover;width:100%">
+    <h3 style="margin-top:10px">{{ b.titulo }}</h3>
+    <p class="small muted">{{ b.subtitulo }}</p>
+    <p class="small">Orden {{ b.orden }} · {% if b.activo %}<span class="badge exito">Activo</span>{% else %}<span class="badge suave">Inactivo</span>{% endif %}{% if b.inicia or b.termina %} · {{ b.inicia|date:"d/m"|default:"…" }} → {{ b.termina|date:"d/m"|default:"…" }}{% endif %}</p>
+    <div class="row"><a class="btn chico borde" href="{% url 'panel:banner_editar' b.pk %}">Editar</a><a class="btn chico borde" href="{% url 'panel:banner_eliminar' b.pk %}">Eliminar</a></div>
+  </article>
+  {% empty %}<p class="muted">Sin banners. El inicio muestra un encabezado simple.</p>{% endfor %}
+</div>
+{% endblock %}

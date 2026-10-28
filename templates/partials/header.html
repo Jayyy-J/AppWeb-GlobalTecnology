@@ -1,0 +1,31 @@
+{% load catalogo %}
+<header class="header" x-data>
+  <div class="contenedor header-fila">
+    <button class="btn icono borde solo-movil" type="button" @click="$store.ui.menu = true" aria-label="Abrir menú de categorías">{% icono "menu" %}</button>
+    <a class="logo" href="{% url 'storefront:home' %}" aria-label="{{ tienda.nombre }} – inicio">
+      {% if tienda.logo %}<img src="{{ tienda.logo.url }}" alt="{{ tienda.nombre }}" width="140" height="36">{% else %}<span class="marca-g" aria-hidden="true">G</span><span>Global<span class="azul">Tecnology</span></span>{% endif %}
+    </a>
+
+    {% include "partials/buscador.html" %}
+
+    <nav class="header-acciones" aria-label="Cuenta y carrito">
+      {% if user.is_authenticated %}
+        <a class="accion solo-escritorio" href="{% url 'accounts:perfil' %}"><span>Hola, {{ user.nombre_corto }}</span><strong>Mi cuenta</strong></a>
+        {% if user.is_staff %}<a class="accion solo-escritorio" href="{% url 'panel:dashboard' %}" hx-boost="false"><span>Admin</span><strong>Panel</strong></a>{% endif %}
+      {% else %}
+        <a class="accion solo-escritorio" href="{% url 'accounts:login' %}?next={{ request.get_full_path|urlencode }}"><span>Hola, identifícate</span><strong>Iniciar sesión</strong></a>
+      {% endif %}
+      <a class="accion solo-escritorio" href="{% url 'orders:mis_pedidos' %}"><span>Devoluciones</span><strong>Mis pedidos</strong></a>
+      <a class="accion accion-carrito" href="{% url 'cart:detalle' %}" aria-label="Carrito, {{ cart_count }} productos">
+        {% icono "carrito" 28 %}
+        {% include "cart/_contador.html" %}
+        <strong class="solo-escritorio">Carrito</strong>
+      </a>
+    </nav>
+  </div>
+
+  <nav class="barra-categorias solo-escritorio" aria-label="Categorías">
+    <div class="contenedor">{% menu_categorias_html %}</div>
+  </nav>
+
+</header>

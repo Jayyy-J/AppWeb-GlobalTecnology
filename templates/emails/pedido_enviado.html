@@ -1,0 +1,13 @@
+{% extends "emails/base.html" %}
+{% block contenido %}
+<h1 style="font-size:22px;margin:0 0 12px;">¡Tu pedido {{ pedido.numero }} va en camino!</h1>
+{% if pedido.metodo_entrega == "transportadora" %}
+<p>Lo enviamos con <strong>{{ pedido.transportadora }}</strong>{% if pedido.numero_guia %}, guía <strong>{{ pedido.numero_guia }}</strong>{% endif %}.</p>
+{% if pedido.url_rastreo %}{% include "emails/_boton.html" with url=pedido.url_rastreo texto="Rastrear envío" %}{% endif %}
+{% else %}
+<p>Lo entregará personalmente <strong>{{ pedido.entregado_por }}</strong>.</p>
+{% endif %}
+{% if evento.nota %}<p>{{ evento.nota }}</p>{% endif %}
+{% if evento.foto %}<p style="font-size:13px;color:#5E5E63;">Adjuntamos la foto de evidencia del envío. También puedes verla en el seguimiento de tu pedido.</p>{% endif %}
+{% include "emails/_boton.html" with url=url_pedido texto="Ver seguimiento" %}
+{% endblock %}

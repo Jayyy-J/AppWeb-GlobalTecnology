@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titulo %}{{ titulo }} · {{ tienda.nombre }}{% endblock %}
+{% block meta_descripcion %}{% if descripcion %}{{ descripcion|truncatechars:155 }}{% else %}{{ titulo }} en {{ tienda.nombre }}: compra con envío a toda Colombia y pago seguro con Wompi.{% endif %}{% endblock %}
+{% block robots %}{% if es_busqueda or hay_filtros %}<meta name="robots" content="noindex, follow">{% endif %}{% endblock %}
+{% block canonical %}{{ request.path }}{% endblock %}
+{% block contenido %}
+<nav class="migas" aria-label="Migas de pan"><ol>
+  <li><a href="{% url 'storefront:home' %}">Inicio</a></li>
+  {% for nombre, url in migas %}<li><a href="{{ url }}">{{ nombre }}</a></li>{% endfor %}
+  <li aria-current="page">{{ titulo }}</li>
+</ol></nav>
+<div x-data="{ filtros: false }" @keydown.escape.window="filtros = false">
+  <header style="margin-bottom:16px">
+    <h1>{{ titulo }}</h1>
+    {% if descripcion %}<p class="muted">{{ descripcion }}</p>{% endif %}
+    {% if subcategorias_nav %}
+    <nav class="chips" aria-label="Subcategorías">
+      {% for s in subcategorias_nav %}<a class="chip{% if categoria and s.pk == categoria.pk %} activo{% endif %}" href="{{ s.get_absolute_url }}" {% if categoria and s.pk == categoria.pk %}aria-current="page"{% endif %}>{{ s.nombre }}</a>{% endfor %}
+    </nav>
+    {% endif %}
+  </header>
+  <div id="zona-listado">{% include "catalog/_zona_listado.html" %}</div>
+  <div class="drawer-fondo" x-show="filtros" x-cloak x-transition.opacity @click="filtros = false" style="z-index:71"></div>
+</div>
+{% endblock %}

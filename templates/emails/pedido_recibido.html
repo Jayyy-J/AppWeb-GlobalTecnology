@@ -1,0 +1,11 @@
+{% extends "emails/base.html" %}
+{% block contenido %}
+<h1 style="font-size:22px;margin:0 0 12px;">Recibimos tu pedido {{ pedido.numero }}</h1>
+{% if pedido.estado_pedido == "esperando_cotizacion" %}
+<p>Tu destino requiere una <strong>cotización manual del envío</strong>. En breve te enviaremos el valor por email y podrás pagar desde "Mis pedidos". No reservamos el stock durante la cotización.</p>
+{% else %}
+<p>Tu pedido quedó registrado y está pendiente de pago. Si ya pagaste, te confirmaremos apenas Wompi apruebe la transacción.</p>
+{% endif %}
+{% include "emails/_resumen_pedido.html" %}
+{% include "emails/_boton.html" with url=url_pedido texto="Ver mi pedido" %}
+{% endblock %}

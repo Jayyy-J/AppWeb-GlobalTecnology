@@ -1,0 +1,45 @@
+<form method="post" action="{% url 'panel:productos_acciones' %}" x-data="{ sel: [], todos: false, accion: '' }" hx-boost="true">
+  {% csrf_token %}
+  <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+  <div class="acciones-masivas" x-show="sel.length" x-cloak>
+    <strong x-text="sel.length + ' seleccionado(s)'"></strong>
+    <select class="input" name="accion" x-model="accion" aria-label="Acción masiva" required>
+      <option value="">Elige una acción…</option>
+      {% for v, l in acciones %}<option value="{{ v }}">{{ l }}</option>{% endfor %}
+    </select>
+    <select class="input" name="categoria" x-show="accion === 'asignar_categoria' || accion === 'quitar_categoria'" aria-label="Categoría">
+      <option value="">Categoría…</option>{% for c in categorias %}<option value="{{ c.pk }}">{{ c }}</option>{% endfor %}
+    </select>
+    <input class="input" type="number" name="porcentaje" min="1" max="90" placeholder="%" x-show="accion === 'aplicar_descuento'" aria-label="Porcentaje de descuento" style="width:90px">
+    <button class="btn chico" type="submit" :disabled="!accion">Aplicar</button>
+  </div>
+  <div class="vidrio tarjeta" style="padding:8px">
+    <div class="tabla-wrap">
+      <table class="tabla">
+        <thead><tr>
+          <th><input type="checkbox" aria-label="Seleccionar todos" @change="sel = $event.target.checked ? [...$root.querySelectorAll('input[name=ids]')].map(i => i.value) : []"></th>
+          <th></th><th>Producto</th><th class="num">Precio</th><th class="num">Stock</th><th>Estado</th><th></th>
+        </tr></thead>
+        <tbody>
+          {% for p in pagina %}{% with img=p.imagen_principal %}
+          <tr>
+            <td><input type="checkbox" name="ids" value="{{ p.pk }}" x-model="sel" aria-label="Seleccionar {{ p.nombre }}"></td>
+            <td>{% if img %}<img class="miniatura" src="{{ img.url_thumb }}" alt="" loading="lazy">{% else %}<div class="miniatura skeleton"></div>{% endif %}</td>
+            <td><a href="{% url 'panel:producto_editar' p.pk %}"><strong>{{ p.nombre }}</strong></a><div class="small muted">{{ p.sku }}{% if p.marca %} · {{ p.marca.nombre }}{% endif %}{% if p.categoria_principal %} · {{ p.categoria_principal.nombre }}{% endif %}</div></td>
+            <td class="num"><strong>{{ p.precio_final|cop }}</strong>{% if p.tiene_descuento %}<div class="small"><span class="precio-antes">{{ p.precio_tachado|cop }}</span> <span class="badge ahorro">-{{ p.porcentaje_ahorro }}%</span></div>{% endif %}</td>
+            <td class="num">{% if p.stock == 0 %}<span class="badge error">0</span>{% elif p.stock <= p.stock_minimo_alerta %}<span class="badge alerta">{{ p.stock }}</span>{% else %}{{ p.stock }}{% endif %}</td>
+            <td>{% if p.activo %}<span class="badge exito">Activo</span>{% else %}<span class="badge suave">Inactivo</span>{% endif %}{% if p.destacado %} <span class="badge">★</span>{% endif %}</td>
+            <td class="acciones-fila">
+              <a class="btn chico borde" href="{% url 'panel:producto_editar' p.pk %}">Editar</a>
+              <a class="btn chico borde" href="{{ p.get_absolute_url }}" target="_blank" rel="noopener" hx-boost="false" aria-label="Ver {{ p.nombre }} en la tienda">{% icono "ojo" 16 %}</a>
+            </td>
+          </tr>
+          {% endwith %}{% empty %}
+          <tr><td colspan="7" class="center muted" style="padding:30px">No hay productos con estos filtros.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</form>
+{% include "panel/_paginacion.html" with target="#tabla-productos" %}

@@ -1,0 +1,7 @@
+{% if pagina.has_other_pages %}
+<nav class="paginacion" aria-label="Paginación">
+  {% if pagina.has_previous %}<a href="{% url_con pagina=pagina.previous_page_number %}" {% if target %}hx-target="{{ target }}"{% endif %} aria-label="Anterior">‹</a>{% endif %}
+  <span class="actual">{{ pagina.number }} / {{ pagina.paginator.num_pages }}</span>
+  {% if pagina.has_next %}<a href="{% url_con pagina=pagina.next_page_number %}" {% if target %}hx-target="{{ target }}"{% endif %} aria-label="Siguiente">›</a>{% endif %}
+</nav>
+{% endif %}

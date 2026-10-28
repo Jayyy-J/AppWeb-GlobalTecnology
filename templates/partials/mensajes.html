@@ -1,0 +1,8 @@
+<div class="mensajes" id="mensajes" aria-live="polite" {% if oob %}hx-swap-oob="true"{% endif %}>
+  {% for m in messages %}
+  <div class="toast {{ m.tags }}" role="status" x-data="{ v: true }" x-show="v" x-init="setTimeout(() => v = false, 6000)" x-transition>
+    <span>{{ m }}</span>
+    <button type="button" @click="v = false" aria-label="Cerrar">×</button>
+  </div>
+  {% endfor %}
+</div>

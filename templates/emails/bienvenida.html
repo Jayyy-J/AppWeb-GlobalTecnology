@@ -1,0 +1,6 @@
+{% extends "emails/base.html" %}
+{% block contenido %}
+<h1 style="font-size:22px;margin:0 0 12px;">¡Hola, {{ usuario.first_name }}! Bienvenido a {{ tienda.nombre }}</h1>
+<p>Tu cuenta quedó creada con el email <strong>{{ usuario.email }}</strong>. Ya puedes comprar, guardar direcciones y seguir tus pedidos.</p>
+{% include "emails/_boton.html" with url=SITE_URL texto="Ir a la tienda" %}
+{% endblock %}

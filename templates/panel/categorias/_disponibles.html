@@ -1,0 +1,7 @@
+<form method="post" action="{% url 'panel:categoria_productos' cat.pk %}">{% csrf_token %}<input type="hidden" name="accion" value="agregar">
+  <ul class="lista-simple" style="max-height:460px;overflow:auto">
+    {% for p in disponibles %}<li><label class="check-linea" style="margin:0"><input type="checkbox" name="producto" value="{{ p.pk }}"> <span>{{ p.nombre }} <span class="small muted">{{ p.sku }}</span></span></label></li>
+    {% empty %}<li class="muted">No hay productos para agregar.</li>{% endfor %}
+  </ul>
+  {% if disponibles %}<button class="btn chico" type="submit" style="margin-top:10px">Agregar seleccionados</button>{% endif %}
+</form>

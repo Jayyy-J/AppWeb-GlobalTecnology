@@ -1,0 +1,10 @@
+{% load catalogo %}
+{% for p in productos %}{% tarjeta_producto p %}{% endfor %}
+{% if pagina.has_next %}
+<div id="mas-productos" class="cargar-mas" style="grid-column:1/-1">
+  <button class="btn borde" type="button"
+    hx-get="{{ request.path }}{% url_con pagina=pagina.next_page_number %}" hx-target="#mas-productos" hx-swap="outerHTML" hx-push-url="false" hx-indicator="this">
+    Cargar más productos <span class="spinner htmx-indicator" aria-hidden="true"></span>
+  </button>
+</div>
+{% endif %}

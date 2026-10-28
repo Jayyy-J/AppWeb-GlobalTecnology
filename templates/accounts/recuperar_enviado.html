@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block titulo %}Revisa tu email · {{ tienda.nombre }}{% endblock %}
+{% block contenido %}
+<div class="auth"><div class="vidrio fuerte tarjeta center">
+  <h1>Revisa tu email</h1>
+  <p class="muted">Si existe una cuenta con ese email, recibirás un enlace para restablecer tu contraseña. Revisa también la carpeta de spam.</p>
+  <a class="btn" href="{% url 'accounts:login' %}">Volver a iniciar sesión</a>
+</div></div>
+{% endblock %}

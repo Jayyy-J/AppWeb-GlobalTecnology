@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block contenido %}
+<div class="cuenta">
+  <nav class="vidrio menu-cuenta" aria-label="Mi cuenta">
+    <a href="{% url 'accounts:perfil' %}" {% if seccion == "perfil" %}class="activo" aria-current="page"{% endif %}>Mis datos</a>
+    <a href="{% url 'orders:mis_pedidos' %}" {% if seccion == "pedidos" %}class="activo" aria-current="page"{% endif %}>Mis pedidos</a>
+    <a href="{% url 'accounts:direcciones' %}" {% if seccion == "direcciones" %}class="activo" aria-current="page"{% endif %}>Direcciones</a>
+    <a href="{% url 'accounts:clave_cambio' %}" {% if seccion == "clave" %}class="activo" aria-current="page"{% endif %}>Contraseña</a>
+    <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit">Cerrar sesión</button></form>
+  </nav>
+  <section>{% block cuenta %}{% endblock %}</section>
+</div>
+{% endblock %}

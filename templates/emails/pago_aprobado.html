@@ -1,0 +1,8 @@
+{% extends "emails/base.html" %}
+{% block contenido %}
+<h1 style="font-size:22px;margin:0 0 12px;">¡Pago aprobado! Pedido {{ pedido.numero }}</h1>
+<p>Gracias por tu compra. Ya estamos preparando tu pedido y te avisaremos cuando sea enviado.</p>
+{% include "emails/_resumen_pedido.html" %}
+<p style="font-size:13px;color:#5E5E63;">Método de pago: {{ pedido.metodo_pago|default:"Wompi" }} · Transacción {{ pedido.wompi_transaccion_id }}</p>
+{% include "emails/_boton.html" with url=url_pedido texto="Seguir mi pedido" %}
+{% endblock %}

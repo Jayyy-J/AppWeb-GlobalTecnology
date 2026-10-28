@@ -1,0 +1,9 @@
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;margin:16px 0;font-size:14px;">
+  {% for it in pedido.items.all %}
+  <tr><td style="padding:8px 0;border-bottom:1px solid #E8F1FF;">{{ it.cantidad }} × {{ it.nombre }}</td><td align="right" style="padding:8px 0;border-bottom:1px solid #E8F1FF;white-space:nowrap;">{{ it.subtotal|cop }}</td></tr>
+  {% endfor %}
+  <tr><td style="padding:6px 0;color:#5E5E63;">Subtotal</td><td align="right">{{ pedido.subtotal|cop }}</td></tr>
+  <tr><td style="padding:6px 0;color:#5E5E63;">Envío</td><td align="right">{% if pedido.estado_pedido == "esperando_cotizacion" %}Por cotizar{% else %}{{ pedido.costo_envio|cop }}{% endif %}</td></tr>
+  <tr><td style="padding:8px 0;font-weight:800;">Total</td><td align="right" style="font-weight:800;">{{ pedido.total|cop }}</td></tr>
+</table>
+<p style="font-size:13px;color:#5E5E63;">Envío a: {{ pedido.envio_nombre }} · {{ pedido.envio_direccion }}</p>

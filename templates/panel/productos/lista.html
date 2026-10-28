@@ -1,0 +1,30 @@
+{% extends "panel/base.html" %}
+{% block titulo %}Productos{% endblock %}
+{% block contenido %}
+<div class="panel-cab">
+  <h1>Productos</h1>
+  <a class="btn" href="{% url 'panel:producto_nuevo' %}">{% icono "mas" 18 %} Nuevo producto</a>
+</div>
+<form class="filtros-panel vidrio tarjeta" style="padding:12px" method="get" hx-get="{% url 'panel:productos' %}" hx-target="#tabla-productos" hx-trigger="change, keyup changed delay:350ms from:#q-prod, submit" hx-push-url="true">
+  <div class="campo grow"><label for="q-prod" class="sr-only">Buscar</label><input id="q-prod" class="input" style="width:100%" type="search" name="q" value="{{ request.GET.q }}" placeholder="Buscar por nombre o SKU"></div>
+  <select class="input" name="categoria" aria-label="Categoría"><option value="">Todas las categorías</option>{% for c in categorias %}<option value="{{ c.pk }}" {% if request.GET.categoria == c.pk|stringformat:"s" %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+  <select class="input" name="marca" aria-label="Marca"><option value="">Todas las marcas</option>{% for m in marcas %}<option value="{{ m.pk }}" {% if request.GET.marca == m.pk|stringformat:"s" %}selected{% endif %}>{{ m.nombre }}</option>{% endfor %}</select>
+  <select class="input" name="estado" aria-label="Estado">
+    <option value="">Todos</option>
+    <option value="activos" {% if request.GET.estado == "activos" %}selected{% endif %}>Activos</option>
+    <option value="inactivos" {% if request.GET.estado == "inactivos" %}selected{% endif %}>Inactivos</option>
+    <option value="stock_bajo" {% if request.GET.estado == "stock_bajo" %}selected{% endif %}>Stock bajo</option>
+    <option value="agotados" {% if request.GET.estado == "agotados" %}selected{% endif %}>Agotados</option>
+    <option value="descuento" {% if request.GET.estado == "descuento" %}selected{% endif %}>Con descuento</option>
+    <option value="destacados" {% if request.GET.estado == "destacados" %}selected{% endif %}>Destacados</option>
+  </select>
+  <select class="input" name="orden" aria-label="Ordenar">
+    <option value="-creado">Más recientes</option>
+    <option value="nombre" {% if request.GET.orden == "nombre" %}selected{% endif %}>Nombre</option>
+    <option value="precio" {% if request.GET.orden == "precio" %}selected{% endif %}>Precio ↑</option>
+    <option value="-precio" {% if request.GET.orden == "-precio" %}selected{% endif %}>Precio ↓</option>
+    <option value="stock" {% if request.GET.orden == "stock" %}selected{% endif %}>Stock ↑</option>
+  </select>
+</form>
+<div id="tabla-productos">{% include "panel/productos/_tabla.html" %}</div>
+{% endblock %}

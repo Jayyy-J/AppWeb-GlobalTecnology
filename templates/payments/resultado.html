@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block titulo %}Resultado del pago · {{ tienda.nombre }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block contenido %}
+<div class="auth" style="max-width:600px">
+  <div class="vidrio fuerte tarjeta center">
+    {% if estado == "APPROVED" %}
+      <div class="ico" style="color:var(--ahorro)">{% icono "check" 56 %}</div>
+      <h1>¡Pago aprobado!</h1>
+      <p>Gracias por tu compra{% if pedido %}. Tu pedido <strong>{{ pedido.numero }}</strong> ya está en proceso{% endif %}. Te enviamos la confirmación por email.</p>
+    {% elif estado == "PENDING" or error or not estado %}
+      <span class="spinner" aria-hidden="true" style="width:36px;height:36px;border-width:3px"></span>
+      <h1 style="margin-top:12px">Estamos confirmando tu pago</h1>
+      <p class="muted">Wompi aún está procesando la transacción. Te avisaremos por email apenas se confirme; también puedes ver el estado en "Mis pedidos".</p>
+    {% else %}
+      <div class="ico" style="color:var(--agotado)">{% icono "alerta" 56 %}</div>
+      <h1>El pago no se completó</h1>
+      <p class="muted">La transacción fue {% if estado == "DECLINED" %}rechazada{% elif estado == "VOIDED" %}anulada{% else %}cancelada por un error{% endif %}{% if tx.status_message %}: {{ tx.status_message }}{% endif %}. Tus productos siguen en el carrito y puedes intentarlo de nuevo.</p>
+    {% endif %}
+    {% if tx %}<p class="small muted">Transacción {{ tx.id }}{% if tx.reference %} · Referencia {{ tx.reference }}{% endif %}</p>{% endif %}
+    <div class="row" style="justify-content:center;margin-top:12px">
+      {% if pedido %}<a class="btn" href="{{ pedido.get_absolute_url }}">Ver mi pedido</a>{% endif %}
+      {% if pedido and pedido.puede_pagar and estado != "PENDING" %}
+        <form method="post" action="{% url 'payments:pagar' pedido.numero %}" hx-boost="false">{% csrf_token %}<button class="btn sec" type="submit">Reintentar pago</button></form>
+      {% endif %}
+      <a class="btn borde" href="{% url 'storefront:home' %}">Seguir comprando</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% extends "emails/base.html" %}
+{% block contenido %}
+<h1 style="font-size:22px;margin:0 0 12px;">Nuevo pedido pagado: {{ pedido.numero }}</h1>
+<p>Cliente: <strong>{{ pedido.cliente_nombre }}</strong> · {{ pedido.cliente_email }} · {{ pedido.cliente_telefono }}</p>
+{% if pedido.alerta_stock %}<p style="color:#B42318;font-weight:700;">⚠ Alerta: no había stock suficiente para algún producto. Revisa el pedido en el panel.</p>{% endif %}
+{% include "emails/_resumen_pedido.html" %}
+{% include "emails/_boton.html" with url=url_panel texto="Abrir en el panel" %}
+{% endblock %}

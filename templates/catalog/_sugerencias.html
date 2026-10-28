@@ -1,0 +1,28 @@
+{% if vacio %}{% else %}
+{% if productos %}
+<h4 id="sug-h-prod">Productos</h4>
+<ul aria-labelledby="sug-h-prod">
+  {% for p in productos %}{% with img=p.imagen_principal %}
+  <li><a class="sug-item" role="option" href="{{ p.get_absolute_url }}">
+    {% if img %}<img src="{{ img.url_thumb }}" alt="" width="44" height="44" loading="lazy">{% endif %}
+    <span>{{ p.nombre|resaltar:q }}</span>
+    <span class="precio">{{ p.precio_final|cop }}</span>
+  </a></li>
+  {% endwith %}{% endfor %}
+</ul>
+{% endif %}
+{% if categorias %}
+<h4 id="sug-h-cat">Categorías</h4>
+<ul aria-labelledby="sug-h-cat">
+  {% for c in categorias %}<li><a class="sug-item" role="option" href="{{ c.get_absolute_url }}">{% icono "carpeta" 18 %} <span>{{ c.nombre|resaltar:q }}</span></a></li>{% endfor %}
+</ul>
+{% endif %}
+{% if populares %}
+<h4 id="sug-h-pop">Búsquedas populares</h4>
+<ul aria-labelledby="sug-h-pop">
+  {% for t in populares %}<li><a class="sug-item" role="option" href="{% url 'catalog:buscar' %}?q={{ t|urlencode }}">{% icono "buscar" 18 %} <span>{{ t|resaltar:q }}</span></a></li>{% endfor %}
+</ul>
+{% endif %}
+{% if not productos and not categorias %}<div class="sug-vacio">Sin coincidencias exactas. Presiona Enter para buscar "{{ q }}".</div>{% endif %}
+<ul><li><a class="sug-item" role="option" href="{% url 'catalog:buscar' %}?q={{ q|urlencode }}"><strong>Ver todos los resultados para "{{ q }}"</strong></a></li></ul>
+{% endif %}

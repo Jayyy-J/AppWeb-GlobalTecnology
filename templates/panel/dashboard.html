@@ -1,0 +1,80 @@
+{% extends "panel/base.html" %}
+{% load static %}
+{% block titulo %}Dashboard{% endblock %}
+{% block contenido %}
+<div class="panel-cab"><h1>Dashboard</h1><span class="muted small">{% now "l j \d\e F \d\e Y" %}</span></div>
+
+<section class="kpis" aria-label="Ventas">
+  <div class="vidrio kpi"><div class="etiqueta">Ventas de hoy</div><div class="valor">{{ ventas_hoy.total|cop }}</div><div class="sub">{{ ventas_hoy.n }} pedido{{ ventas_hoy.n|pluralize }} pagado{{ ventas_hoy.n|pluralize }}</div></div>
+  <div class="vidrio kpi"><div class="etiqueta">Esta semana</div><div class="valor">{{ ventas_semana.total|cop }}</div><div class="sub">{{ ventas_semana.n }} pedido{{ ventas_semana.n|pluralize }}</div></div>
+  <div class="vidrio kpi"><div class="etiqueta">Este mes</div><div class="valor">{{ ventas_mes.total|cop }}</div><div class="sub">{{ ventas_mes.n }} pedido{{ ventas_mes.n|pluralize }}</div></div>
+  <div class="vidrio kpi"><div class="etiqueta">Pendientes de pago</div><div class="valor">{{ pendientes_pago }}</div><div class="sub">esperando a Wompi o al cliente</div></div>
+</section>
+
+<div class="grid-panel tres">
+  <section class="vidrio tarjeta">
+    <h2>Ventas de los últimos 30 días</h2>
+    <div style="position:relative;height:280px"><canvas id="grafica-ventas" aria-label="Gráfica de ventas diarias de los últimos 30 días" role="img"></canvas></div>
+  </section>
+  <section class="vidrio tarjeta">
+    <h2>Pedidos por estado</h2>
+    <ul class="lista-simple">
+      {% for e in estados %}<li><a href="{% url 'panel:pedidos' %}?estado_pedido={{ e.clave }}">{{ e.nombre }}</a><strong>{{ e.n }}</strong></li>{% endfor %}
+    </ul>
+  </section>
+</div>
+
+<h2 style="margin-top:24px">Requieren acción</h2>
+<div class="grid-panel dos" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr))">
+  <section class="vidrio tarjeta">
+    <h3>{% icono "camion" 18 %} Por enviar ({{ accion.por_enviar|length }})</h3>
+    <ul class="lista-simple">{% for o in accion.por_enviar %}<li><a href="{% url 'panel:pedido' o.numero %}">{{ o.numero }}</a><span class="small muted">{{ o.envio_municipio }}</span><strong>{{ o.total|cop }}</strong></li>{% empty %}<li class="muted">Nada pendiente 🎉</li>{% endfor %}</ul>
+  </section>
+  <section class="vidrio tarjeta">
+    <h3>{% icono "documento" 18 %} Por cotizar envío ({{ accion.por_cotizar|length }})</h3>
+    <ul class="lista-simple">{% for o in accion.por_cotizar %}<li><a href="{% url 'panel:pedido' o.numero %}">{{ o.numero }}</a><span class="small muted">{{ o.envio_municipio }}</span><span class="badge alerta">Cotizar</span></li>{% empty %}<li class="muted">Sin cotizaciones pendientes</li>{% endfor %}</ul>
+  </section>
+  <section class="vidrio tarjeta">
+    <h3>{% icono "alerta" 18 %} Alertas de stock/pago ({{ accion.alertas|length }})</h3>
+    <ul class="lista-simple">{% for o in accion.alertas %}<li><a href="{% url 'panel:pedido' o.numero %}">{{ o.numero }}</a><span class="badge error">Revisar</span></li>{% empty %}<li class="muted">Sin alertas</li>{% endfor %}</ul>
+  </section>
+</div>
+
+<div class="grid-panel dos" style="margin-top:16px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+  <section class="vidrio tarjeta">
+    <h3>Stock bajo</h3>
+    <ul class="lista-simple">{% for p in stock_bajo %}<li><a href="{% url 'panel:producto_editar' p.pk %}">{{ p.nombre|truncatechars:40 }}</a><span class="badge {% if p.stock == 0 %}error{% else %}alerta{% endif %}">{{ p.stock }} u.</span></li>{% empty %}<li class="muted">Todo con buen stock</li>{% endfor %}</ul>
+  </section>
+  <section class="vidrio tarjeta">
+    <h3>Más vendidos (90 días)</h3>
+    <ul class="lista-simple">{% for t in top %}<li><span>{{ t.nombre|truncatechars:38 }}</span><span class="small muted">{{ t.ingresos|cop }}</span><strong>{{ t.unidades }} u.</strong></li>{% empty %}<li class="muted">Aún no hay ventas</li>{% endfor %}</ul>
+  </section>
+  <section class="vidrio tarjeta">
+    <h3>Búsquedas sin resultados</h3>
+    <p class="small muted">Lo que buscan los clientes y no encuentran.</p>
+    <ul class="lista-simple">{% for s in sin_resultados %}<li><span>"{{ s.termino }}"</span><strong>{{ s.cantidad_busquedas }}×</strong></li>{% empty %}<li class="muted">Sin datos todavía</li>{% endfor %}</ul>
+  </section>
+</div>
+{{ grafica_json|json_script:"datos-grafica" }}
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'vendor/chart-4.4.6.umd.js' %}"></script>
+<script>
+(function () {
+  function cop(n) { return "$" + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+  var el = document.getElementById("grafica-ventas");
+  if (!el || !window.Chart) return;
+  var d = JSON.parse(JSON.parse(document.getElementById("datos-grafica").textContent));
+  if (el._chart) el._chart.destroy();
+  el._chart = new Chart(el, {
+    type: "bar",
+    data: { labels: d.labels, datasets: [{ label: "Ventas (COP)", data: d.data, backgroundColor: "rgba(10,102,255,.75)", borderRadius: 6, maxBarThickness: 22 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? false : {},
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (c) { return cop(c.parsed.y); } } } },
+      scales: { y: { ticks: { callback: function (v) { return cop(v); } }, grid: { color: "rgba(11,61,145,.08)" } }, x: { grid: { display: false } } },
+    },
+  });
+})();
+</script>
+{% endblock %}

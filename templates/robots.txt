@@ -1,0 +1,10 @@
+User-agent: *
+Disallow: /panel/
+Disallow: /cuenta/
+Disallow: /carrito/
+Disallow: /checkout/
+Disallow: /pagos/
+Disallow: /buscar/sugerencias/
+Allow: /
+
+Sitemap: {{ SITE_URL }}/sitemap.xml

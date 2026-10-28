@@ -1,0 +1,25 @@
+{% extends "panel/base.html" %}
+{% block titulo %}Reportes{% endblock %}
+{% block contenido %}
+<div class="panel-cab"><h1>Reportes</h1></div>
+<div class="vidrio tarjeta" style="max-width:820px">
+  <form method="get" class="filtros-panel" hx-boost="false">
+    {% for campo in form %}<div class="campo"><label for="{{ campo.id_for_label }}">{{ campo.label }}</label>{{ campo }}</div>{% endfor %}
+    <button class="btn chico sec" type="submit">Ver resumen</button>
+  </form>
+  {% include "partials/form_errores.html" %}
+  {% if resumen %}
+  <div class="kpis">
+    <div class="vidrio kpi"><div class="etiqueta">Pedidos creados</div><div class="valor">{{ resumen.pedidos }}</div></div>
+    <div class="vidrio kpi"><div class="etiqueta">Pedidos pagados</div><div class="valor">{{ resumen.pagados }}</div></div>
+    <div class="vidrio kpi"><div class="etiqueta">Ventas</div><div class="valor">{{ resumen.ventas|cop }}</div></div>
+    <div class="vidrio kpi"><div class="etiqueta">Cobrado en envíos</div><div class="valor">{{ resumen.envios|cop }}</div></div>
+  </div>
+  <div class="row">
+    <a class="btn" hx-boost="false" href="?desde={{ form.desde.value }}&hasta={{ form.hasta.value }}&exportar=pedidos">{% icono "descargar" 18 %} Exportar pedidos (CSV)</a>
+    <a class="btn sec" hx-boost="false" href="?desde={{ form.desde.value }}&hasta={{ form.hasta.value }}&exportar=productos">{% icono "descargar" 18 %} Exportar productos (CSV)</a>
+  </div>
+  <p class="small muted" style="margin-top:10px">Archivos CSV con separador «;» y codificación UTF-8, listos para abrir en Excel.</p>
+  {% endif %}
+</div>
+{% endblock %}

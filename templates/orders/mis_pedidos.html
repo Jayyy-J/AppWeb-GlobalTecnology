@@ -1,0 +1,32 @@
+{% extends "accounts/_layout.html" %}
+{% block titulo %}Mis pedidos · {{ tienda.nombre }}{% endblock %}
+{% block cuenta %}
+<div class="vidrio tarjeta">
+  <h1>Mis pedidos</h1>
+  {% for p in pagina %}
+  <article class="opcion-dir" style="cursor:default;flex-wrap:wrap">
+    <div class="grow">
+      <div class="row"><strong><a href="{{ p.get_absolute_url }}">{{ p.numero }}</a></strong>{% include "orders/_badges_estado.html" with pedido=p %}</div>
+      <div class="small muted">{{ p.creado|date:"j \d\e F \d\e Y, g:i a" }} · {{ p.cantidad_productos }} producto{{ p.cantidad_productos|pluralize }}</div>
+      <div class="small">{% for it in p.items.all|slice:":3" %}{{ it.nombre }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if p.items.all|length > 3 %}…{% endif %}</div>
+    </div>
+    <div class="num">
+      <div class="precio-final">{{ p.total|cop }}</div>
+      <div class="row" style="justify-content:flex-end;margin-top:6px">
+        {% if p.puede_pagar %}<a class="btn chico" href="{{ p.get_absolute_url }}">{% if p.estado_pago == "rechazado" or p.estado_pago == "error" or p.estado_pago == "anulado" %}Reintentar pago{% else %}Pagar ahora{% endif %}</a>{% endif %}
+        <a class="btn chico borde" href="{{ p.get_absolute_url }}">Ver detalle</a>
+      </div>
+    </div>
+  </article>
+  {% empty %}
+  <div class="vacio"><p class="muted">Aún no tienes pedidos.</p><a class="btn" href="{% url 'catalog:productos' %}">Explorar productos</a></div>
+  {% endfor %}
+  {% if pagina.has_other_pages %}
+  <nav class="paginacion" aria-label="Paginación">
+    {% if pagina.has_previous %}<a href="?pagina={{ pagina.previous_page_number }}">‹</a>{% endif %}
+    <span class="actual">{{ pagina.number }}</span>
+    {% if pagina.has_next %}<a href="?pagina={{ pagina.next_page_number }}">›</a>{% endif %}
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}

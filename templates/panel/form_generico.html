@@ -1,0 +1,27 @@
+{% extends "panel/base.html" %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block contenido %}
+<div class="panel-cab"><h1>{{ titulo }}</h1>{% if ver %}<a class="btn borde chico" href="{{ ver }}" target="_blank" rel="noopener" hx-boost="false">Ver en la tienda</a>{% endif %}</div>
+{% if seccion == "contenido" %}{% include "panel/contenido/_tabs.html" %}{% endif %}
+<div class="vidrio tarjeta" style="max-width:860px">
+  {% if ayuda %}<p class="muted small">{{ ayuda }}</p>{% endif %}
+  <form method="post" {% if multipart %}enctype="multipart/form-data"{% endif %} novalidate>
+    {% csrf_token %}
+    {% include "partials/form_errores.html" %}
+    <div class="grid-form dos">
+      {% for campo in form %}
+        {% if campo.is_hidden %}{{ campo }}{% else %}
+        <div class="{% if campo.field.widget.input_type == 'checkbox' or campo.name == 'contenido' or campo.name == 'descripcion' or campo.name == 'texto_pie' %}ancho{% endif %}">
+          {% include "partials/campo.html" %}
+          {% if campo.value and campo.field.widget.input_type == "file" and campo.value.url %}<img src="{{ campo.value.url }}" alt="Imagen actual" style="max-height:80px;margin:-6px 0 12px;border-radius:8px">{% endif %}
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <div class="row">
+      <button class="btn" type="submit">Guardar</button>
+      {% if volver %}<a class="btn borde" href="{% url volver %}">Cancelar</a>{% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}
