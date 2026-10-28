@@ -1,0 +1,6 @@
+{% extends "emails/base.html" %}
+{% block contenido %}
+<h1 style="font-size:22px;margin:0 0 12px;">No se pudo completar el pago del pedido {{ pedido.numero }}</h1>
+<p>La transacción fue <strong>{{ pedido.get_estado_pago_display|lower }}</strong>. Tus productos siguen en el carrito y puedes reintentar el pago con el mismo u otro medio.</p>
+{% include "emails/_boton.html" with url=url_pedido texto="Reintentar pago" %}
+{% endblock %}

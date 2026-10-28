@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block titulo %}Nueva contraseña · {{ tienda.nombre }}{% endblock %}
+{% block contenido %}
+<div class="auth"><div class="vidrio fuerte tarjeta">
+  {% if validlink %}
+  <h1>Nueva contraseña</h1>
+  <form method="post" novalidate>{% csrf_token %}{% for campo in form %}{% include "partials/campo.html" %}{% endfor %}
+    <button class="btn bloque" type="submit">Guardar contraseña</button></form>
+  {% else %}
+  <h1>Enlace no válido</h1>
+  <p class="muted">El enlace ya se usó o expiró. Solicita uno nuevo.</p>
+  <a class="btn" href="{% url 'accounts:recuperar' %}">Solicitar nuevo enlace</a>
+  {% endif %}
+</div></div>
+{% endblock %}

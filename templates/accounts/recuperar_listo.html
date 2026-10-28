@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block titulo %}Contraseña actualizada · {{ tienda.nombre }}{% endblock %}
+{% block contenido %}
+<div class="auth"><div class="vidrio fuerte tarjeta center">
+  <h1>¡Listo!</h1><p class="muted">Tu contraseña fue actualizada.</p>
+  <a class="btn" href="{% url 'accounts:login' %}">Iniciar sesión</a>
+</div></div>
+{% endblock %}

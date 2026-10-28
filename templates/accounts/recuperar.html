@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block titulo %}Recuperar contraseña · {{ tienda.nombre }}{% endblock %}
+{% block contenido %}
+<div class="auth"><div class="vidrio fuerte tarjeta">
+  <h1>Recuperar contraseña</h1>
+  <p class="muted">Escribe tu email y te enviaremos un enlace para crear una nueva contraseña.</p>
+  <form method="post" novalidate>{% csrf_token %}{% for campo in form %}{% include "partials/campo.html" %}{% endfor %}
+    <button class="btn bloque" type="submit">Enviar enlace</button></form>
+</div></div>
+{% endblock %}

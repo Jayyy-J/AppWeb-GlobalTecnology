@@ -1,0 +1,16 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+.env.tunnel
+db.sqlite3
+/media/
+!/media/.gitkeep
+/staticfiles/
+.pytest_cache/
+.coverage
+htmlcov/
+.vscode/*
+!.vscode/extensions.json
+*.log

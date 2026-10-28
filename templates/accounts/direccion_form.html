@@ -1,0 +1,14 @@
+{% extends "accounts/_layout.html" %}
+{% block titulo %}{% if direccion %}Editar{% else %}Nueva{% endif %} dirección · {{ tienda.nombre }}{% endblock %}
+{% block cuenta %}
+<div class="vidrio tarjeta">
+  <h1>{% if direccion %}Editar dirección{% else %}Nueva dirección{% endif %}</h1>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% include "partials/form_errores.html" %}
+    {% include "accounts/_direccion_campos.html" %}
+    <input type="hidden" name="next" value="{{ next }}">
+    <button class="btn" type="submit">Guardar dirección</button>
+  </form>
+</div>
+{% endblock %}

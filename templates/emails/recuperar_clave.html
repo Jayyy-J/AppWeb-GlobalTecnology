@@ -1,0 +1,8 @@
+{% extends "emails/base.html" %}
+{% block contenido %}
+<h1 style="font-size:22px;margin:0 0 12px;">Recupera tu contraseña</h1>
+<p>Recibimos una solicitud para restablecer la contraseña de <strong>{{ email }}</strong>. Si no fuiste tú, ignora este mensaje.</p>
+{% url 'accounts:recuperar_confirmar' uidb64=uid token=token as ruta %}
+{% include "emails/_boton.html" with url=SITE_URL|add:ruta texto="Crear nueva contraseña" %}
+<p style="font-size:13px;color:#5E5E63;">El enlace vence en 3 días y solo puede usarse una vez.</p>
+{% endblock %}

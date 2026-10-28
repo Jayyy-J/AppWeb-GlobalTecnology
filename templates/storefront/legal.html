@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block titulo %}{{ pagina.titulo }} · {{ tienda.nombre }}{% endblock %}
+{% block meta_descripcion %}{{ pagina.titulo }} de {{ tienda.nombre }}.{% endblock %}
+{% block contenido %}
+<article class="legal vidrio tarjeta">
+  <nav class="migas" aria-label="Migas de pan"><ol><li><a href="{% url 'storefront:home' %}">Inicio</a></li><li aria-current="page">{{ pagina.titulo }}</li></ol></nav>
+  <h1>{{ pagina.titulo }}</h1>
+  {% if pagina.borrador_revision %}<div class="aviso alerta" role="note"><strong>Borrador:</strong> este texto es una base de referencia y está pendiente de revisión por un abogado.</div>{% endif %}
+  <p class="muted small">Última actualización: {{ pagina.actualizado|date:"j \d\e F \d\e Y" }}</p>
+  <div class="contenido">{{ pagina.contenido|safe }}</div>
+</article>
+{% endblock %}

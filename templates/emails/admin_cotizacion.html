@@ -1,0 +1,6 @@
+{% extends "emails/base.html" %}
+{% block contenido %}
+<h1 style="font-size:22px;margin:0 0 12px;">Pedido {{ pedido.numero }} requiere cotización de envío</h1>
+<p>Destino: {{ pedido.envio_municipio }}, {{ pedido.envio_departamento }}. Subtotal {{ pedido.subtotal|cop }}.</p>
+{% include "emails/_boton.html" with url=url_panel texto="Cotizar en el panel" %}
+{% endblock %}

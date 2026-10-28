@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block titulo %}Página no encontrada · {{ tienda.nombre }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block contenido %}
+<div class="pagina-error vidrio tarjeta">
+  <div class="codigo">404</div>
+  <h1>No encontramos esta página</h1>
+  <p class="muted">Puede que el enlace esté roto o el producto ya no esté disponible.</p>
+  <div class="row" style="justify-content:center">
+    <a class="btn" href="{% url 'storefront:home' %}">Ir al inicio</a>
+    <a class="btn borde" href="{% url 'catalog:productos' %}">Ver productos</a>
+  </div>
+</div>
+{% endblock %}

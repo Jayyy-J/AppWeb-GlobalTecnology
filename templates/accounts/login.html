@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block titulo %}Iniciar sesión · {{ tienda.nombre }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block contenido %}
+<div class="auth">
+  <div class="vidrio fuerte tarjeta">
+    <h1>Iniciar sesión</h1>
+    {% if request.GET.next and "carrito" in request.GET.next %}<div class="aviso">Inicia sesión para agregar productos a tu carrito. Lo agregaremos automáticamente.</div>{% endif %}
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "partials/form_errores.html" %}
+      {% for campo in form %}{% include "partials/campo.html" %}{% endfor %}
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="btn bloque" type="submit">Ingresar</button>
+    </form>
+    <p class="small" style="margin-top:12px"><a href="{% url 'accounts:recuperar' %}">¿Olvidaste tu contraseña?</a></p>
+    <div class="separador">¿Eres nuevo en {{ tienda.nombre }}?</div>
+    <a class="btn borde bloque" href="{% url 'accounts:registro' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Crear tu cuenta</a>
+  </div>
+</div>
+{% endblock %}

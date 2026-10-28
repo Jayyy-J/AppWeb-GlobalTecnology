@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block titulo %}Crear cuenta · {{ tienda.nombre }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block contenido %}
+<div class="auth" style="max-width:560px">
+  <div class="vidrio fuerte tarjeta">
+    <h1>Crear cuenta</h1>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% include "partials/form_errores.html" %}
+      <div class="grid-form dos">
+        {% with campo=form.first_name %}{% include "partials/campo.html" %}{% endwith %}
+        {% with campo=form.last_name %}{% include "partials/campo.html" %}{% endwith %}
+        {% with campo=form.email %}{% include "partials/campo.html" %}{% endwith %}
+        {% with campo=form.telefono %}{% include "partials/campo.html" %}{% endwith %}
+        {% with campo=form.password1 %}{% include "partials/campo.html" %}{% endwith %}
+        {% with campo=form.password2 %}{% include "partials/campo.html" %}{% endwith %}
+        <div class="ancho">{% with campo=form.acepta_tratamiento_datos %}{% include "partials/campo.html" %}{% endwith %}</div>
+      </div>
+      <p class="small muted">Consulta nuestra <a href="{% url 'storefront:legal' 'politica-de-privacidad' %}" target="_blank">política de privacidad y tratamiento de datos</a>.</p>
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="btn bloque" type="submit">Crear cuenta</button>
+    </form>
+    <div class="separador">¿Ya tienes cuenta?</div>
+    <a class="btn borde bloque" href="{% url 'accounts:login' %}{% if next %}?next={{ next|urlencode }}{% endif %}">Iniciar sesión</a>
+  </div>
+</div>
+{% endblock %}

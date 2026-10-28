@@ -1,0 +1,23 @@
+{% extends "accounts/_layout.html" %}
+{% block titulo %}Mis direcciones · {{ tienda.nombre }}{% endblock %}
+{% block cuenta %}
+<div class="vidrio tarjeta">
+  <div class="row between"><h1>Mis direcciones</h1><a class="btn chico" href="{% url 'accounts:direccion_nueva' %}">{% icono "mas" 18 %} Nueva dirección</a></div>
+  {% for d in direcciones %}
+  <div class="opcion-dir" style="cursor:default">
+    <div class="grow">
+      <strong>{{ d.alias }}</strong> {% if d.es_predeterminada %}<span class="badge suave">Predeterminada</span>{% endif %}
+      <div>{{ d.nombre_recibe }} · {{ d.telefono }}</div>
+      <div class="muted small">{{ d.as_text }}</div>
+    </div>
+    <div class="row" style="align-items:flex-start">
+      <a class="btn chico borde" href="{% url 'accounts:direccion_editar' d.pk %}">Editar</a>
+      {% if not d.es_predeterminada %}<form method="post" action="{% url 'accounts:direccion_predeterminada' d.pk %}">{% csrf_token %}<button class="btn chico sec" type="submit">Predeterminar</button></form>{% endif %}
+      <form method="post" action="{% url 'accounts:direccion_eliminar' d.pk %}" onsubmit="return confirm('¿Eliminar esta dirección?')">{% csrf_token %}<button class="btn-link peligro" type="submit">Eliminar</button></form>
+    </div>
+  </div>
+  {% empty %}
+  <div class="vacio"><p class="muted">Aún no tienes direcciones guardadas.</p></div>
+  {% endfor %}
+</div>
+{% endblock %}

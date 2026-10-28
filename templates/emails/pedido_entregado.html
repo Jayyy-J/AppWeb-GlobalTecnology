@@ -1,0 +1,7 @@
+{% extends "emails/base.html" %}
+{% block contenido %}
+<h1 style="font-size:22px;margin:0 0 12px;">Pedido {{ pedido.numero }} entregado</h1>
+<p>¡Esperamos que disfrutes tu compra! Recuerda que tienes derecho de retracto dentro de los 5 días hábiles siguientes a la entrega (Ley 1480 de 2011).</p>
+{% if evento.nota %}<p>{{ evento.nota }}</p>{% endif %}
+{% include "emails/_boton.html" with url=url_pedido texto="Ver mi pedido" %}
+{% endblock %}

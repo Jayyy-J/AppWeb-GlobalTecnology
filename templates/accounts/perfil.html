@@ -1,0 +1,14 @@
+{% extends "accounts/_layout.html" %}
+{% block titulo %}Mis datos · {{ tienda.nombre }}{% endblock %}
+{% block cuenta %}
+<div class="vidrio tarjeta">
+  <h1>Mis datos</h1>
+  <p class="muted">{{ user.email }} · cliente desde {{ user.date_joined|date:"F \d\e Y" }}</p>
+  <form method="post" novalidate>
+    {% csrf_token %}
+    <div class="grid-form dos">{% for campo in form %}{% include "partials/campo.html" %}{% endfor %}</div>
+    <p class="small muted">El tipo y número de documento se usan para pagos con PSE en Wompi.</p>
+    <button class="btn" type="submit">Guardar cambios</button>
+  </form>
+</div>
+{% endblock %}

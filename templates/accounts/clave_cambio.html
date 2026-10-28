@@ -1,0 +1,9 @@
+{% extends "accounts/_layout.html" %}
+{% block titulo %}Cambiar contraseña · {{ tienda.nombre }}{% endblock %}
+{% block cuenta %}
+<div class="vidrio tarjeta" style="max-width:520px">
+  <h1>Cambiar contraseña</h1>
+  <form method="post" novalidate>{% csrf_token %}{% include "partials/form_errores.html" %}{% for campo in form %}{% include "partials/campo.html" %}{% endfor %}
+    <button class="btn" type="submit">Actualizar contraseña</button></form>
+</div>
+{% endblock %}

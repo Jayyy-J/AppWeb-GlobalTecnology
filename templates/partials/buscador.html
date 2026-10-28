@@ -1,0 +1,17 @@
+<div class="busqueda" x-data="buscador('{% url 'catalog:sugerencias' %}')" @click.outside="cerrar()" @keydown.escape="cerrar()">
+  <form action="{% url 'catalog:buscar' %}" method="get" role="search" @submit="enviar($event)">
+    <label class="sr-only" for="buscar-categoria">Categoría</label>
+    <select id="buscar-categoria" name="categoria" class="solo-escritorio" x-ref="categoria">
+      <option value="">Todo</option>
+      {% for c in categorias_menu %}<option value="{{ c.slug }}" {% if request.GET.categoria == c.slug %}selected{% endif %}>{{ c.nombre }}</option>{% endfor %}
+    </select>
+    <label class="sr-only" for="buscar-q">Buscar productos</label>
+    <input id="buscar-q" name="q" type="search" placeholder="Buscar en GlobalTecnology" autocomplete="off" value="{{ request.GET.q|default:'' }}"
+      role="combobox" aria-autocomplete="list" aria-controls="sugerencias-lista" :aria-expanded="abierto.toString()"
+      :aria-activedescendant="activo >= 0 ? 'sug-' + activo : null"
+      x-ref="input" x-model="q" @input.debounce.250ms="buscar()" @focus="if (q.length >= 2 && html) abierto = true"
+      @keydown.arrow-down.prevent="mover(1)" @keydown.arrow-up.prevent="mover(-1)" @keydown.enter="elegir($event)">
+    <button type="submit" aria-label="Buscar">{% icono "buscar" %}</button>
+  </form>
+  <div class="sugerencias" id="sugerencias-lista" role="listbox" aria-label="Sugerencias" x-show="abierto" x-cloak x-html="html" x-ref="lista"></div>
+</div>

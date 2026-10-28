@@ -1,0 +1,15 @@
+{% if variante == "drawer" %}
+<ul>
+  {% for c in categorias %}
+  <li><a href="{{ c.get_absolute_url }}">{{ c.nombre }}</a>
+    {% if c.hijas_menu %}<ul class="sub">{% for h in c.hijas_menu %}<li><a href="{{ h.get_absolute_url }}">{{ h.nombre }}</a></li>{% endfor %}</ul>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<ul>
+  <li><a href="/ofertas/">Ofertas del día</a></li>
+  {% for c in categorias %}<li><a href="{{ c.get_absolute_url }}">{{ c.nombre }}</a></li>{% endfor %}
+  <li><a href="/productos/">Ver todo</a></li>
+</ul>
+{% endif %}

@@ -1,0 +1,7 @@
+<nav class="barra-movil" aria-label="Navegación móvil">
+  <a href="{% url 'storefront:home' %}">{% icono "inicio" %}<span>Inicio</span></a>
+  <a href="{% url 'catalog:productos' %}">{% icono "tienda" %}<span>Productos</span></a>
+  <a href="{% url 'cart:detalle' %}" aria-label="Carrito, {{ cart_count }} productos">{% icono "carrito" %}{% include "cart/_contador.html" %}<span>Carrito</span></a>
+  <a href="{% url 'orders:mis_pedidos' %}">{% icono "pedidos" %}<span>Pedidos</span></a>
+  <a href="{% if user.is_authenticated %}{% url 'accounts:perfil' %}{% else %}{% url 'accounts:login' %}{% endif %}">{% icono "usuario" %}<span>{% if user.is_authenticated %}Cuenta{% else %}Ingresar{% endif %}</span></a>
+</nav>
