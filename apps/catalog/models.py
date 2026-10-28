@@ -218,6 +218,9 @@ class Product(TimeStampedModel):
             self.slug = unique_slug(self, self.nombre)
         if self.tipo_descuento != self.TipoDescuento.PORCENTAJE:
             self.descuento_porcentaje = None if self.tipo_descuento == self.TipoDescuento.NINGUNO else self.descuento_porcentaje
+        from apps.core.html import sanitize_html
+
+        self.descripcion = sanitize_html(self.descripcion)
         if isinstance(self.especificaciones, dict):
             self.especificaciones = {str(k).strip(): str(v).strip() for k, v in self.especificaciones.items() if str(k).strip()}
         super().save(*args, **kwargs)

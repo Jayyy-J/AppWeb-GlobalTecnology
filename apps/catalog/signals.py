@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
 
@@ -9,9 +8,10 @@ from .search import update_search_index
 
 
 def _reindex(ids):
+    # Síncrono: es barato (una actualización por producto) y así el índice nunca queda desfasado.
     ids = list(ids)
     if ids:
-        transaction.on_commit(lambda: update_search_index(ids))
+        update_search_index(ids)
 
 
 @receiver(post_save, sender=Product)

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% load catalogo %}
+{% block titulo %}{{ p.nombre }} · {{ tienda.nombre }}{% endblock %}
+{% block meta_descripcion %}{{ p.descripcion_corta|default:p.nombre|truncatechars:155 }}{% endblock %}
+{% block canonical %}{{ p.get_absolute_url }}{% endblock %}
+{% block og %}
+  <meta property="og:type" content="product">
+  <meta property="og:title" content="{{ p.nombre }}">
+  <meta property="og:description" content="{{ p.descripcion_corta|default:p.nombre }}">
+  <meta property="og:url" content="{{ SITE_URL }}{{ p.get_absolute_url }}">
+  {% if imagenes %}<meta property="og:image" content="{{ SITE_URL }}{{ imagenes.0.url_media }}">{% endif %}
+  <meta property="product:price:amount" content="{{ p.precio_final }}">
+  <meta property="product:price:currency" content="COP">
+{% endblock %}
+{% block head_extra %}<script type="application/ld+json">{{ json_ld|json_ld }}</script>{% endblock %}
+{% block contenido %}
+<nav class="migas" aria-label="Migas de pan"><ol>
+  <li><a href="{% url 'storefront:home' %}">Inicio</a></li>
+  {% for nombre, url in migas %}<li><a href="{{ url }}">{{ nombre }}</a></li>{% endfor %}
+  <li aria-current="page">{{ p.nombre|truncatechars:50 }}</li>
+</ol></nav>
+
+{% if not p.activo %}<div class="aviso alerta">Vista previa: este producto está inactivo y no es visible para los clientes.</div>{% endif %}
+
+<div class="ficha">
+  <!-- Galería -->
+  <section class="galeria vidrio" x-data="galeria()" aria-label="Imágenes del producto">
+    {% if imagenes %}
+      <div class="galeria-principal solo-escritorio" style="display:block"
+           @mouseenter="zoom = true" @mouseleave="zoom = false" @mousemove="mover($event)">
+        {% for im in imagenes %}
+        <img x-show="actual === {{ forloop.counter0 }}" {% if not forloop.first %}x-cloak{% endif %}
+             src="{{ im.url_media }}" srcset="{{ im.srcset }}" sizes="(min-width:1024px) 40vw, 100vw"
+             width="{{ im.ancho|default:800 }}" height="{{ im.alto|default:800 }}" alt="{{ im.alt }}"
+             :style="zoom ? 'transform: scale(2); transform-origin:' + origen : ''"
+             {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+        {% endfor %}
+      </div>
+      <div class="galeria-principal solo-movil" aria-label="Desliza para ver más fotos">
+        {% for im in imagenes %}
+        <div class="slide-movil"><img src="{{ im.url_media }}" srcset="{{ im.srcset }}" sizes="100vw" width="{{ im.ancho|default:800 }}" height="{{ im.alto|default:800 }}" alt="{{ im.alt }}" {% if not forloop.first %}loading="lazy"{% endif %}></div>
+        {% endfor %}
+      </div>
+      {% if imagenes|length > 1 %}
+      <div class="galeria-miniaturas solo-escritorio" role="tablist" aria-label="Miniaturas">
+        {% for im in imagenes %}
+        <button type="button" @click="actual = {{ forloop.counter0 }}" @mouseenter="actual = {{ forloop.counter0 }}"
+                :aria-current="(actual === {{ forloop.counter0 }}).toString()" aria-label="Ver imagen {{ forloop.counter }}">
+          <img src="{{ im.url_thumb }}" alt="" width="64" height="64" loading="lazy">
+        </button>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% else %}
+      <div class="galeria-principal skeleton" aria-label="Sin imagen"></div>
+    {% endif %}
+  </section>
+
+  <!-- Información -->
+  <section>
+    {% if p.marca %}<a class="small" href="{{ p.marca.get_absolute_url }}">Marca: {{ p.marca.nombre }}</a>{% endif %}
+    <h1 style="margin-top:4px">{{ p.nombre }}</h1>
+    <p class="muted small">SKU: {{ p.sku }}</p>
+    <div style="margin:12px 0">
+      {% if p.tiene_descuento %}<span class="badge ahorro" style="font-size:.9rem">-{{ p.porcentaje_ahorro }}%</span>{% endif %}
+      <span class="precio-final" style="font-size:1.8rem">{{ p.precio_final|cop }}</span>
+      {% if p.tiene_descuento %}
+        <div><span class="precio-antes" style="font-size:1rem">Antes: {{ p.precio_tachado|cop }}</span> <span class="ahorro-txt">Ahorras {{ p.ahorro|cop }}</span></div>
+        {% if p.descuento_termina %}<div class="small muted">Oferta válida hasta el {{ p.descuento_termina|date:"j \d\e F" }}</div>{% endif %}
+      {% endif %}
+      <div class="small muted">IVA incluido</div>
+    </div>
+    {% if p.descripcion_corta %}<p>{{ p.descripcion_corta }}</p>{% endif %}
+    {% if especificaciones %}
+    <ul class="small" style="padding-left:18px">
+      {% for k, v in especificaciones|slice:":5" %}<li><strong>{{ k }}:</strong> {{ v }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </section>
+
+  <!-- Caja de compra -->
+  <aside class="caja-compra vidrio fuerte" aria-label="Comprar">
+    <div class="precio-final" style="font-size:1.5rem">{{ p.precio_final|cop }}</div>
+    {% if p.disponible %}
+      {% if p.stock_bajo %}<p class="stock-bajo">¡Quedan {{ p.stock }}! Pide pronto.</p>{% else %}<p style="color:var(--ahorro);font-weight:600">Disponible</p>{% endif %}
+      <form method="post" action="{% url 'cart:agregar' p.pk %}" x-data="cantidad({{ p.stock }}, 1)">
+        {% csrf_token %}
+        <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+        <label for="cantidad">Cantidad</label>
+        <div class="cantidad" style="margin-bottom:14px">
+          <button type="button" @click="menos()" aria-label="Disminuir cantidad">−</button>
+          <input id="cantidad" name="cantidad" type="number" min="1" max="{{ p.stock }}" x-model.number="n" @change="validar()" inputmode="numeric">
+          <button type="button" @click="mas()" aria-label="Aumentar cantidad">+</button>
+        </div>
+        <div class="stack">
+          <button class="btn bloque" type="submit" hx-post="{% url 'cart:agregar' p.pk %}" hx-swap="none">{% icono "carrito" 18 %} Agregar al carrito</button>
+          <button class="btn bloque sec" type="submit" name="comprar_ahora" value="1" hx-boost="false">Comprar ahora</button>
+        </div>
+      </form>
+    {% else %}
+      <p class="agotado-txt">Agotado por ahora</p>
+      {% if tienda.whatsapp_url %}<a class="btn borde bloque" href="{{ tienda.whatsapp_url }}?text={{ 'Hola, quiero saber cuándo llega: '|add:p.nombre|urlencode }}" target="_blank" rel="noopener" hx-boost="false">Avísame por WhatsApp</a>{% endif %}
+    {% endif %}
+    <ul class="small muted" style="list-style:none;padding:0;margin:16px 0 0">
+      <li class="row" style="margin-bottom:6px">{% icono "camion" 18 %} Envíos a toda Colombia</li>
+      <li class="row" style="margin-bottom:6px">{% icono "escudo" 18 %} Pago seguro con Wompi</li>
+      <li class="row">{% icono "check" 18 %} Garantía y derecho de retracto</li>
+    </ul>
+  </aside>
+</div>
+
+{% if p.descripcion %}
+<section class="seccion vidrio tarjeta">
+  <h2>Descripción</h2>
+  <div class="descripcion">{{ p.descripcion|safe }}</div>
+</section>
+{% endif %}
+
+{% if especificaciones %}
+<section class="seccion vidrio tarjeta">
+  <h2>Especificaciones</h2>
+  <table class="specs"><tbody>
+    {% for k, v in especificaciones %}<tr><th scope="row">{{ k }}</th><td>{{ v }}</td></tr>{% endfor %}
+  </tbody></table>
+</section>
+{% endif %}
+
+{% if relacionados %}
+<section class="seccion">
+  <div class="seccion-cab"><h2>Productos relacionados</h2>{% if p.categoria_principal %}<a href="{{ p.categoria_principal.get_absolute_url }}">Ver más</a>{% endif %}</div>
+  <div class="grid-productos">{% for r in relacionados %}{% tarjeta_producto r %}{% endfor %}</div>
+</section>
+{% endif %}
+{% endblock %}

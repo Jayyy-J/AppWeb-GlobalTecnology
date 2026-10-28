@@ -1,0 +1,108 @@
+<div class="listado">
+  <aside class="panel-lateral vidrio" :class="{ 'abierto': filtros }" aria-label="Filtros" id="panel-filtros">
+    <div class="row between solo-movil" style="margin-bottom:8px">
+      <strong>Filtros</strong>
+      <button class="btn icono borde" type="button" @click="filtros = false" aria-label="Cerrar filtros">{% icono "cerrar" %}</button>
+    </div>
+    <form id="form-filtros" method="get" action="{{ request.path }}"
+      hx-get="{{ request.path }}" hx-target="#zona-listado" hx-trigger="change, submit" hx-push-url="true"
+      hx-include="#select-orden" hx-indicator="#zona-listado">
+      {% if f.q %}<input type="hidden" name="q" value="{{ f.q }}">{% endif %}
+      {% if categoria_busqueda %}<input type="hidden" name="categoria" value="{{ categoria_busqueda.slug }}">{% endif %}
+
+      {% if facetas.subcategorias|length > 1 or f.subcategorias %}
+      <details class="filtro" open>
+        <summary>Categoría</summary>
+        <ul>
+          {% for s in facetas.subcategorias %}
+          <li><label><input type="checkbox" name="sub" value="{{ s.categorias__slug }}" {% if s.categorias__slug in f.subcategorias %}checked{% endif %}> {{ s.categorias__nombre }} <span class="conteo">{{ s.n }}</span></label></li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% endif %}
+
+      {% if facetas.marcas %}
+      <details class="filtro" open>
+        <summary>Marca</summary>
+        <ul>
+          {% for m in facetas.marcas %}
+          <li><label><input type="checkbox" name="marca" value="{{ m.marca__slug }}" {% if m.marca__slug in f.marcas %}checked{% endif %}> {{ m.marca__nombre }} <span class="conteo">{{ m.n }}</span></label></li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% endif %}
+
+      <details class="filtro" open>
+        <summary>Precio</summary>
+        <div class="rango">
+          <label class="sr-only" for="precio-min">Precio mínimo</label>
+          <input class="input" id="precio-min" type="number" name="min" min="0" step="1000" inputmode="numeric" placeholder="Mín" value="{{ f.precio_min|default_if_none:'' }}">
+          <span aria-hidden="true">–</span>
+          <label class="sr-only" for="precio-max">Precio máximo</label>
+          <input class="input" id="precio-max" type="number" name="max" min="0" step="1000" inputmode="numeric" placeholder="Máx" value="{{ f.precio_max|default_if_none:'' }}">
+        </div>
+        <button class="btn chico sec" type="submit" style="margin-top:8px">Aplicar</button>
+      </details>
+
+      <div class="filtro">
+        <label class="check-linea" style="margin-bottom:6px"><input type="checkbox" name="descuento" value="1" {% if f.descuento %}checked{% endif %}> <span>Solo con descuento</span></label>
+        <label class="check-linea"><input type="checkbox" name="disponible" value="1" {% if f.disponible %}checked{% endif %}> <span>Solo disponibles</span></label>
+      </div>
+
+      {% for e in facetas.especificaciones %}
+      <details class="filtro" {% if forloop.counter <= 3 %}open{% endif %}>
+        <summary>{{ e.clave }}</summary>
+        <ul>
+          {% for v in e.valores %}
+          <li><label><input type="checkbox" name="esp" value="{{ e.clave }}:{{ v.valor }}" {% if v.activo %}checked{% endif %}> {{ v.valor }} <span class="conteo">{{ v.n }}</span></label></li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% endfor %}
+      <noscript><button class="btn bloque" type="submit">Filtrar</button></noscript>
+    </form>
+  </aside>
+
+  <section class="resultados" aria-live="polite" aria-busy="false">
+    <div class="barra-listado">
+      <div class="row">
+        <button class="btn chico borde solo-movil" type="button" @click="filtros = true" aria-controls="panel-filtros">{% icono "filtro" 18 %} Filtros{% if chips %} ({{ chips|length }}){% endif %}</button>
+        <span class="muted small"><strong>{{ total }}</strong> producto{{ total|pluralize }}</span>
+      </div>
+      <div class="row">
+        <label for="select-orden" class="small muted" style="margin:0">Ordenar por</label>
+        <select id="select-orden" name="orden" class="input" style="width:auto;min-height:38px;padding:6px 10px"
+          hx-get="{{ request.path }}" hx-include="#form-filtros" hx-target="#zona-listado" hx-push-url="true" hx-trigger="change">
+          {% for k, label in ordenes.items %}{% if k != "relevancia" or f.q %}<option value="{{ k }}" {% if f.orden == k %}selected{% endif %}>{{ label }}</option>{% endif %}{% endfor %}
+        </select>
+      </div>
+    </div>
+
+    {% if chips %}
+    <div class="chips" aria-label="Filtros activos">
+      {% for c in chips %}<a class="chip" href="{{ c.url }}" hx-target="#zona-listado" aria-label="Quitar filtro {{ c.texto }}">{{ c.texto }} <span class="x" aria-hidden="true">×</span></a>{% endfor %}
+      {% if hay_filtros %}<a class="chip" href="{{ request.path }}{% if f.q %}?q={{ f.q|urlencode }}{% endif %}" hx-target="#zona-listado"><strong>Limpiar todo</strong></a>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if total %}
+      <div class="grid-productos" id="grid-productos">{% include "catalog/_items.html" %}</div>
+    {% else %}
+      <div class="vidrio tarjeta vacio">
+        {% if f.q %}
+          <h2>No encontramos resultados para "{{ f.q }}"</h2>
+          {% if quisiste_decir %}<p>¿Quisiste decir <a href="{% url 'catalog:buscar' %}?q={{ quisiste_decir|urlencode }}"><strong>{{ quisiste_decir }}</strong></a>?</p>{% endif %}
+          <p class="muted">Revisa la ortografía o usa términos más generales.</p>
+        {% else %}
+          <h2>No hay productos con estos filtros</h2>
+          <p class="muted">Prueba quitando algunos filtros.</p>
+        {% endif %}
+      </div>
+      {% if sugeridos %}
+      <section class="seccion"><h2>Te puede interesar</h2>
+        <div class="grid-productos">{% for p in sugeridos %}{% include "catalog/_tarjeta.html" %}{% endfor %}</div>
+      </section>
+      {% endif %}
+    {% endif %}
+  </section>
+</div>

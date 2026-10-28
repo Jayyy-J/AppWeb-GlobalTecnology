@@ -1,7 +1,7 @@
 {% load catalogo %}
-<header class="header" x-data="{ menu: false }">
+<header class="header">
   <div class="contenedor header-fila">
-    <button class="btn icono borde solo-movil" type="button" @click="menu = true" aria-label="Abrir menú de categorías">{% icono "menu" %}</button>
+    <button class="btn icono borde solo-movil" type="button" @click="$store.ui.menu = true" aria-label="Abrir menú de categorías">{% icono "menu" %}</button>
     <a class="logo" href="{% url 'storefront:home' %}" aria-label="{{ tienda.nombre }} – inicio">
       {% if tienda.logo %}<img src="{{ tienda.logo.url }}" alt="{{ tienda.nombre }}" width="140" height="36">{% else %}<span class="marca-g" aria-hidden="true">G</span><span>Global<span class="azul">Tecnology</span></span>{% endif %}
     </a>
@@ -28,28 +28,4 @@
     <div class="contenedor">{% menu_categorias_html %}</div>
   </nav>
 
-  <template x-teleport="body">
-    <div x-show="menu" x-cloak>
-      <div class="drawer-fondo" @click="menu = false" x-show="menu" x-transition.opacity></div>
-      <aside class="drawer" x-show="menu" x-transition role="dialog" aria-modal="true" aria-label="Menú" @keydown.escape.window="menu = false">
-        <div class="row between" style="margin-bottom:12px">
-          <strong>Menú</strong>
-          <button class="btn icono borde" type="button" @click="menu = false" aria-label="Cerrar menú">{% icono "cerrar" %}</button>
-        </div>
-        <ul>
-          {% if user.is_authenticated %}
-            <li><a href="{% url 'accounts:perfil' %}">Hola, {{ user.nombre_corto }} · Mi cuenta</a></li>
-            {% if user.is_staff %}<li><a href="{% url 'panel:dashboard' %}" hx-boost="false">Panel de administración</a></li>{% endif %}
-          {% else %}
-            <li><a href="{% url 'accounts:login' %}">Iniciar sesión</a></li>
-            <li><a href="{% url 'accounts:registro' %}">Crear cuenta</a></li>
-          {% endif %}
-          <li><a href="{% url 'orders:mis_pedidos' %}">Mis pedidos</a></li>
-          <li><a href="{% url 'catalog:ofertas' %}">Ofertas</a></li>
-        </ul>
-        <hr style="border:0;border-top:1px solid var(--borde);margin:12px 0">
-        {% menu_categorias_html "drawer" %}
-      </aside>
-    </div>
-  </template>
 </header>

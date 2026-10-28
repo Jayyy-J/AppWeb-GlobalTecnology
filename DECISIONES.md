@@ -16,3 +16,15 @@ Registro de decisiones tomadas donde el SPEC era ambiguo o dejaba opciones abier
 10. **Health check de Railway** en `/salud/` (exento de la redirección HTTPS y con `healthcheck.railway.app` permitido).
 11. **HSTS preload** queda desactivado por defecto (`SECURE_HSTS_PRELOAD=False`, aviso W021 de `check --deploy`): inscribir el dominio en la lista de precarga es una decisión irreversible del dueño del dominio. Se activa con la variable `SECURE_HSTS_PRELOAD=True`.
 12. **collectstatic en el build** se ejecuta explícitamente con `--settings=config.settings.prod` para que use el almacenamiento con manifiesto de WhiteNoise, igual que en tiempo de ejecución.
+
+## Fase 2 · Catálogo
+
+13. **Normalización de texto en Python + `unaccent` en la BD.** El `search_vector` se construye con texto ya sin tildes (configuración `spanish`), y la similitud de trigramas usa `unaccent(lower(nombre))`. Además se guarda `search_text` (texto normalizado con nombre, SKU, marca, categorías y especificaciones), que sirve para la similitud por palabra y como respaldo `icontains` en SQLite.
+14. **Relevancia** = `2 × SearchRank + max(TrigramWordSimilarity(nombre), 0,9 × TrigramWordSimilarity(search_text))`, con umbral de similitud 0,42 (probado con errores como "samsumg", "galaxi", "tinkpad").
+15. **"¿Quisiste decir…?"** corrige palabra por palabra contra un vocabulario cacheado (palabras de productos, marcas, categorías y búsquedas exitosas) usando `similarity()` de pg_trgm; en SQLite usa `difflib`.
+16. **Índice de búsqueda síncrono**: se recalcula en señales al guardar productos, marcas, categorías o cambiar las categorías de un producto (una actualización por producto; barato y nunca queda desfasado).
+17. **Precios en la BD**: `con_precios()` anota `precio_final_db` y `descuento_pct_db` con la misma lógica que las propiedades Python (incluida la vigencia por fechas) para filtrar por rango de precio y ordenar por precio o descuento. Una prueba verifica que ambos cálculos coinciden.
+18. **Redondeo**: precio con descuento porcentual = `precio × (100 − %) / 100`, redondeado a pesos con mitad hacia arriba. El "% de ahorro" de "precio antes" se redondea igual.
+19. **Facetas de especificaciones**: se calculan en Python sobre los resultados (máx. 2.000 filas) con semántica "OR dentro de una clave, AND entre claves"; solo se muestran claves con al menos 2 valores. Los conteos de marca/categoría usan una subconsulta de ids para no arrastrar anotaciones al `GROUP BY`.
+20. **Caché del home**: el fragmento completo se cachea 10 min con una versión que se incrementa al guardar productos, categorías, marcas, banners o la configuración de la tienda. Las tarjetas en caché no incluyen `csrf_token` (sería el de otro usuario); el botón "Agregar" usa HTMX, que envía el token desde la cookie.
+21. **Paginación "Cargar más"**: 24 productos por página; el botón trae la página siguiente y se reemplaza a sí mismo por las tarjetas nuevas y un nuevo botón, conservando los filtros.

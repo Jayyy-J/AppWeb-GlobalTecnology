@@ -1,8 +1,82 @@
 {% extends "base.html" %}
+{% load cache catalogo %}
 {% block contenido %}
+{% cache 600 home_fragmento home_version %}
+{% with banners=banners %}
+{% if banners %}
+<section class="carrusel" x-data="carrusel({{ banners|length }})" @mouseenter="stop()" @mouseleave="play()"
+         aria-roledescription="carrusel" aria-label="Promociones">
+  {% for b in banners %}
+  <div class="slide" x-show="i === {{ forloop.counter0 }}" {% if not forloop.first %}x-cloak{% endif %}
+       x-transition:enter.opacity.duration.400ms role="group" aria-roledescription="diapositiva" aria-label="{{ forloop.counter }} de {{ banners|length }}">
+    <picture>
+      {% if b.imagen_movil %}<source media="(max-width: 639px)" srcset="{{ b.imagen_movil.url }}">{% endif %}
+      <img src="{{ b.imagen_escritorio.url }}" alt="" width="2000" height="750" {% if forloop.first %}fetchpriority="high"{% else %}loading="lazy"{% endif %}>
+    </picture>
+    <div class="slide-texto">
+      <h2>{{ b.titulo }}</h2>
+      {% if b.subtitulo %}<p>{{ b.subtitulo }}</p>{% endif %}
+      {% if b.enlace %}<a class="btn" href="{{ b.enlace }}">{{ b.texto_boton|default:"Ver más" }}</a>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% if banners|length > 1 %}
+  <button class="carrusel-nav prev" type="button" @click="prev()" aria-label="Anterior">‹</button>
+  <button class="carrusel-nav next" type="button" @click="next()" aria-label="Siguiente">›</button>
+  <div class="carrusel-puntos">
+    {% for b in banners %}<button type="button" @click="ir({{ forloop.counter0 }})" :aria-current="(i === {{ forloop.counter0 }}).toString()" aria-label="Ir a la diapositiva {{ forloop.counter }}"></button>{% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% else %}
 <section class="vidrio tarjeta" style="padding:40px 24px">
-  <h1>Bienvenido a {{ tienda.nombre }}</h1>
-  <p class="muted">{{ tienda.eslogan }}</p>
+  <h1>{{ tienda.nombre }}</h1><p class="muted">{{ tienda.eslogan }}</p>
   <a class="btn" href="{% url 'catalog:productos' %}">Ver productos</a>
+</section>
+{% endif %}
+{% endwith %}
+
+<h1 class="sr-only">{{ tienda.nombre }}: tienda de tecnología en Colombia</h1>
+
+{% with cats=categorias_home %}{% if cats %}
+<section class="seccion" aria-labelledby="h-categorias">
+  <div class="seccion-cab"><h2 id="h-categorias">Compra por categoría</h2><a href="{% url 'catalog:productos' %}">Ver todo</a></div>
+  <div class="grid-categorias">
+    {% for c in cats %}
+    <a class="cat-card vidrio" href="{{ c.get_absolute_url }}">
+      {% if c.imagen %}<img src="{{ c.imagen.url }}" alt="" width="200" height="200" loading="lazy">{% else %}<div class="skeleton" style="width:100%;aspect-ratio:1"></div>{% endif %}
+      <span>{{ c.nombre }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}{% endwith %}
+
+{% with lista=ofertas %}{% if lista %}
+<section class="seccion" aria-labelledby="h-ofertas">
+  <div class="seccion-cab"><h2 id="h-ofertas">Ofertas del día</h2><a href="{% url 'catalog:ofertas' %}">Ver todas las ofertas</a></div>
+  <div class="grid-productos cinco">{% for p in lista %}{% tarjeta_producto p %}{% endfor %}</div>
+</section>
+{% endif %}{% endwith %}
+
+{% with lista=destacados %}{% if lista %}
+<section class="seccion" aria-labelledby="h-destacados">
+  <div class="seccion-cab"><h2 id="h-destacados">Destacados</h2><a href="{% url 'catalog:productos' %}">Ver más</a></div>
+  <div class="grid-productos cinco">{% for p in lista %}{% tarjeta_producto p %}{% endfor %}</div>
+</section>
+{% endif %}{% endwith %}
+
+{% with lista=nuevos %}{% if lista %}
+<section class="seccion" aria-labelledby="h-nuevos">
+  <div class="seccion-cab"><h2 id="h-nuevos">Lo más nuevo</h2><a href="{% url 'catalog:productos' %}?orden=nuevos">Ver más</a></div>
+  <div class="grid-productos cinco">{% for p in lista %}{% tarjeta_producto p %}{% endfor %}</div>
+</section>
+{% endif %}{% endwith %}
+{% endcache %}
+
+<section class="seccion beneficios" aria-label="Beneficios">
+  <div class="beneficio vidrio"><span class="ico">{% icono "camion" 26 %}</span><div><strong>Envíos a toda Colombia</strong><p>{% if tienda.barra_anuncios %}{{ tienda.barra_anuncios }}{% else %}Despachos rápidos y seguimiento en línea.{% endif %}</p></div></div>
+  <div class="beneficio vidrio"><span class="ico">{% icono "escudo" 26 %}</span><div><strong>Pago seguro con Wompi</strong><p>Tarjeta, PSE, Nequi y Bancolombia. Nunca guardamos tu tarjeta.</p></div></div>
+  <div class="beneficio vidrio"><span class="ico">{% icono "whatsapp" 26 %}</span><div><strong>Soporte por WhatsApp</strong><p>{% if tienda.whatsapp_url %}<a href="{{ tienda.whatsapp_url }}" target="_blank" rel="noopener" hx-boost="false">Escríbenos</a>, te asesoramos antes y después de tu compra.{% else %}Te asesoramos antes y después de tu compra.{% endif %}</p></div></div>
 </section>
 {% endblock %}

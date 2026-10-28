@@ -11,6 +11,12 @@
     var token = cookie("csrftoken");
     if (!token) { var meta = document.querySelector("meta[name=csrf-token]"); token = meta ? meta.content : ""; }
     if (token) e.detail.headers["X-CSRFToken"] = token;
+    // URLs limpias y compartibles: sin parámetros vacíos en las peticiones GET
+    if (e.detail.verb === "get" && e.detail.parameters && e.detail.parameters.forEach) {
+      var vacios = [];
+      e.detail.parameters.forEach(function (v, k) { if (v === "") vacios.push(k); });
+      vacios.forEach(function (k) { e.detail.parameters.delete(k); });
+    }
   });
 
   // ---------- Contador del carrito (evento HX-Trigger "carrito-actualizado") ----------
@@ -89,6 +95,7 @@
               self.html = html; self.activo = -1; self.abierto = true;
               self.$nextTick(function () {
                 self.opciones().forEach(function (el, i) { el.id = "sug-" + i; el.setAttribute("aria-selected", "false"); });
+                if (window.htmx) htmx.process(self.$refs.lista);
               });
             })
             .catch(function () {});
@@ -104,10 +111,9 @@
           var ops = this.opciones();
           if (this.abierto && this.activo >= 0 && ops[this.activo]) {
             e.preventDefault();
-            var href = ops[this.activo].getAttribute("data-href");
+            var el = ops[this.activo];
             this.cerrar();
-            if (window.htmx) { htmx.ajax("GET", href, { target: "body", swap: "innerHTML" }).then(function () { history.pushState({}, "", href); window.scrollTo(0, 0); }); }
-            else window.location.href = href;
+            el.click();
           }
         },
         enviar: function () { this.cerrar(); },
@@ -152,6 +158,10 @@
         validar: function () { var v = parseInt(this.n, 10) || 1; this.n = Math.min(Math.max(1, v), this.max); },
       };
     });
+
+    /* Estado global de la interfaz (cajón móvil) */
+    Alpine.store("ui", { menu: false });
+    document.addEventListener("htmx:beforeSwap", function () { Alpine.store("ui").menu = false; });
 
     /* Lightbox simple */
     Alpine.store("lightbox", { src: "", alt: "", abierto: false,

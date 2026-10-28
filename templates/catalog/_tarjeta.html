@@ -1,0 +1,35 @@
+{% with img=p.imagen_principal %}
+<article class="producto-card vidrio">
+  <div class="img">
+    <div class="badges">
+      {% if p.tiene_descuento %}<span class="badge ahorro">-{{ p.porcentaje_ahorro }}%</span>{% endif %}
+      {% if p.nuevo %}<span class="badge nuevo">Nuevo</span>{% endif %}
+      {% if not p.disponible %}<span class="badge agotado">Agotado</span>{% endif %}
+    </div>
+    {% if img %}
+      <img src="{{ img.url_thumb }}" srcset="{{ img.srcset }}" sizes="(min-width:1100px) 280px, (min-width:640px) 30vw, 46vw"
+           width="300" height="300" alt="{{ img.alt }}" {% if prioridad %}fetchpriority="high"{% else %}loading="lazy"{% endif %} decoding="async">
+    {% else %}
+      <div class="skeleton" style="width:100%;height:100%" aria-hidden="true"></div>
+    {% endif %}
+  </div>
+  {% if p.marca %}<span class="marca">{{ p.marca.nombre }}</span>{% endif %}
+  <a class="nombre" href="{{ p.get_absolute_url }}">{{ p.nombre }}</a>
+  <div>
+    <span class="precio-final">{{ p.precio_final|cop }}</span>
+    {% if p.tiene_descuento %}<div><span class="precio-antes"><span class="sr-only">Antes </span>{{ p.precio_tachado|cop }}</span> <span class="ahorro-txt">Ahorras {{ p.ahorro|cop }}</span></div>{% endif %}
+  </div>
+  {% if p.stock_bajo %}<span class="stock-bajo small">¡Quedan {{ p.stock }}!</span>{% endif %}
+  <div class="acciones">
+    {% if p.disponible %}
+    <form method="post" action="{% url 'cart:agregar' p.pk %}" hx-post="{% url 'cart:agregar' p.pk %}" hx-swap="none">
+      <input type="hidden" name="cantidad" value="1">
+      <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+      <button class="btn chico bloque" type="submit">{% icono "carrito" 18 %} Agregar</button>
+    </form>
+    {% else %}
+    <a class="btn chico bloque borde" href="{{ p.get_absolute_url }}">Ver detalles</a>
+    {% endif %}
+  </div>
+</article>
+{% endwith %}
