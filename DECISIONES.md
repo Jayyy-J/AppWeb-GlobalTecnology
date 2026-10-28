@@ -68,3 +68,13 @@ Registro de decisiones tomadas donde el SPEC era ambiguo o dejaba opciones abier
 47. **Rótulo**: vista imprimible (HTML con estilos de impresión; el navegador permite "Guardar como PDF") en lugar de generar PDF en el servidor, para no agregar dependencias pesadas.
 48. **CSV**: exportaciones con BOM UTF-8 y separador `;` (Excel en español los abre bien). La importación de tarifas acepta `;` o `,`, códigos DANE o nombres (sin importar tildes) y actualiza las tarifas existentes.
 49. **Tienda ↔ panel con hx-boost**: usan `<head>` distintos; el middleware HTMX fuerza una carga completa (`HX-Redirect`) cuando una navegación con boost cruza de una zona a la otra.
+
+## Fase 7 · Pulido
+
+50. **DIVIPOLA se carga en `migrate`** (`shipping.0003`) además del comando `cargar_ubicaciones`: en Railway solo corre `migrate`, así la tienda queda operativa sin pasos manuales.
+51. **Mapas de fuente**: se eliminaron los comentarios `sourceMappingURL` de las librerías vendorizadas; WhiteNoise (manifiesto estricto) hacía fallar `collectstatic` —y por tanto el build de Railway— al no encontrar los `.map`.
+52. **Sitemap** sin `django.contrib.sites`: el dominio y el protocolo salen de `SITE_URL`.
+53. **Contraste AA** verificado numéricamente para todos los pares de color usados (texto, botones, badges de ahorro, agotado y alerta): todos ≥ 4,5:1.
+54. **Verificación del túnel**: se probó waitress con `config.settings.tunnel` simulando las cabeceras de Dev Tunnels (login con CSRF por HTTPS, cookies `Secure`, sin HSTS ni bucles, estáticos/media con caché, webhook sin CSRF).
+55. **Almacenamiento de archivos**: en Railway las fotos viven en un volumen montado en `/app/media` y se sirven con una vista de Django con caché larga (nombres aleatorios ⇒ `immutable`). **Si el tráfico crece**, conviene migrar a un almacenamiento de objetos (S3, Cloudflare R2, Backblaze B2) con `django-storages` y un CDN: basta cambiar el backend `default` de `STORAGES` (y el de evidencias privadas a un bucket privado con URLs firmadas).
+56. **Pago sandbox real pendiente**: el entorno de construcción no tenía acceso a la red de Wompi; el flujo se probó de punta a punta con transacciones simuladas y firmas reales. El primer pago real en sandbox debe hacerse siguiendo la sección 3/5 del README.

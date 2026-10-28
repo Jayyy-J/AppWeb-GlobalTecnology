@@ -129,3 +129,18 @@ def test_check_tunnel(settings, monkeypatch, capsys):
     settings.WOMPI_PUBLIC_KEY = "pub_prod_xxx"
     call_command("check_tunnel")
     assert "FALLA" in capsys.readouterr().out
+
+
+def test_divipola_cargado_por_migracion():
+    from apps.shipping.models import Departamento, Municipio
+
+    assert Departamento.objects.count() == 33
+    assert Municipio.objects.count() >= 1100
+    assert Municipio.objects.get(codigo="11001").nombre == "Bogotá, D.C."
+    assert Municipio.objects.get(codigo="50001").departamento.nombre == "Meta"
+
+
+def test_sitemap_y_robots(client, catalogo):
+    r = client.get("/sitemap.xml")
+    assert r.status_code == 200 and catalogo["s24"].get_absolute_url() in r.content.decode()
+    assert "Sitemap:" in client.get("/robots.txt").content.decode()

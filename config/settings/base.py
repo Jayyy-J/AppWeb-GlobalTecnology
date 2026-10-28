@@ -172,6 +172,7 @@ WOMPI_API_URL = (
     "https://production.wompi.co/v1" if WOMPI_ENV == "production" else "https://sandbox.wompi.co/v1"
 )
 WOMPI_CHECKOUT_URL = "https://checkout.wompi.co/p/"
+WOMPI_ENVIAR_DIRECCION = env.bool("WOMPI_ENVIAR_DIRECCION", default=True)
 
 # django-axes: límite de intentos de inicio de sesión
 AXES_FAILURE_LIMIT = env.int("AXES_FAILURE_LIMIT", default=5)

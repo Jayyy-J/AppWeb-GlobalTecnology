@@ -29,11 +29,12 @@ def imagen():
 def ubicaciones(db):
     from apps.shipping.models import Departamento, Municipio
 
-    meta = Departamento.objects.create(codigo="50", nombre="Meta")
-    amazonas = Departamento.objects.create(codigo="91", nombre="Amazonas")
-    vcio = Municipio.objects.create(codigo="50001", nombre="Villavicencio", departamento=meta)
-    acacias = Municipio.objects.create(codigo="50006", nombre="Acacías", departamento=meta)
-    leticia = Municipio.objects.create(codigo="91001", nombre="Leticia", departamento=amazonas)
+    # Cargados por la migración shipping.0003 (DIVIPOLA completo)
+    meta = Departamento.objects.get(codigo="50")
+    amazonas = Departamento.objects.get(codigo="91")
+    vcio = Municipio.objects.get(codigo="50001")
+    acacias = Municipio.objects.get(codigo="50006")
+    leticia = Municipio.objects.get(codigo="91001")
     return {"meta": meta, "amazonas": amazonas, "vcio": vcio, "acacias": acacias, "leticia": leticia}
 
 

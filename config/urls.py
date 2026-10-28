@@ -1,9 +1,11 @@
 from django.conf import settings
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path, re_path
 
 from apps.core import views as core_views
 from apps.storefront import views as storefront_views
+from apps.storefront.sitemaps import SITEMAPS
 
 handler404 = "apps.core.views.error_404"
 handler500 = "apps.core.views.error_500"
@@ -12,6 +14,7 @@ urlpatterns = [
     path(settings.ADMIN_URL, admin.site.urls),
     path("salud/", core_views.health, name="salud"),
     path("robots.txt", storefront_views.robots_txt, name="robots"),
+    path("sitemap.xml", sitemap, {"sitemaps": SITEMAPS}, name="sitemap"),
     path("cuenta/", include("apps.accounts.urls")),
     path("panel/", include("apps.panel.urls")),
     path("pagos/", include("apps.payments.urls")),

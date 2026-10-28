@@ -127,13 +127,11 @@ class Resumen:
         return not self.lineas
 
 
-def resumen(user, municipio=None, lock=False) -> Resumen:
+def resumen(user, municipio=None) -> Resumen:
     """Recalcula el carrito con precios y stock actuales (y opcionalmente el envío al municipio)."""
     items = CartItem.objects.filter(carrito__usuario=user).select_related("producto", "producto__marca").prefetch_related(
         Prefetch("producto__imagenes", queryset=ProductImage.objects.order_by("-es_principal", "orden", "id"))
     ).order_by("creado", "id")
-    if lock:
-        items = items.select_for_update(of=("self",))
     res = Resumen()
     for it in items:
         p = it.producto
